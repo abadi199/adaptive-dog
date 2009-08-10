@@ -1,0 +1,23 @@
+%
+%/u/ma/mcgough/tex/thesis/thesis.sty, Mon Nov 16 17:19:04 1992
+%Edit by Jeff McGough <mcgough@jeeves.math.utah.edu>
+%
+% This is where you place all of your definitions, commands, etc
+%
+%
+% You may not use these, but they will provide an example:
+%
+\newtheorem{thrm}{Theorem}
+\newtheorem{lem}[thrm]{Lemma}
+\newtheorem{cor}[thrm]{Corollary}
+\newtheorem{rem}[thrm]{Remark}
+\newtheorem{defn}[thrm]{Definition}
+\newtheorem{exmpl}[thrm]{Example}
+
+\newif\ifinputpicture \inputpicturetrue
+
+% Use this command to input pictures, then control whether that
+% happens or not by saying \inputpicturetrue or \inputpicturefalse
+% in the preamble
+\newcommand{\inputpicture}[1]{%
+   \ifinputpicture \input{#1} \else \input{box.tex} \fi }

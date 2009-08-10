@@ -1,0 +1,73 @@
+\title{Investigating the Statistical Mechanics of Quantum Mechanical
+Damped \\ Simple Harmonic Oscillators}
+
+\author{James Edward Morris}
+
+\department{Department of Physics}
+
+\degree{Bachelor of Science in Physics}
+\degreemonth{May}
+\degreeyear{1994}
+\thesisdate{May 6, 1994}
+
+%% By default, the thesis will be copyrighted to MIT.  If you need to copyright
+%% the thesis to yourself, just specify the `vi' documentstyle option.  If for
+%% some reason you want to exactly specify the copyright notice text, you can
+%% use the \copyrightnoticetext command.  
+\copyrightnoticetext{\copyright \hspace{.2cm} James E. Morris 1994.  
+All rights reserved.
+The author hereby grants to MIT permission to reproduce and to distribute 
+publicly paper and electronic copies of this thesis document in whole or in 
+part.  Further, the author hereby grants permission to anyone who wants it to 
+reproduce and distribute this thesis document freely in whole or in part in 
+any manner provided it is properly attributed.}
+
+\supervisor{Herman Feshbach}{Professor Emeritus}
+
+% this is the department committee chairman, not the thesis committee chairman
+\chairman{Professor Aron Bernstein}{Chairman, Departmental Committee}
+
+% Make the titlepage based on the above information.  If you need
+% something special and can't use the standard form, you can specify
+% the exact text of the titlepage yourself.  Put it in a titlepage
+% environment and leave blank lines where you want vertical space.
+% The spaces will be adjusted to fill the entire page.  The dotted
+% lines for the signatures are made with the \signature command.
+\maketitle
+
+% The abstractpage environment sets up everything on the page except
+% the text itself.  The title and other header material are put at the
+% top of the page, and the supervisors are listed at the bottom.  A
+% new page is begun both before and after.  Of course, an abstract may
+% be more than one page itself.  If you need more control over the
+% format of the page, you can use the abstract environment, which puts
+% the word "Abstract" at the beginning and single spaces its text.
+
+%% You can either \input (*not* \include) your abstract file, or you can put
+%% the text of the abstract directly between the \begin{abstractpage} and
+%% \end{abstractpage} commands.
+
+% First copy: start a new page, and save the page number.
+\newpage
+\leavevmode
+\newpage
+%\pagestyle{empty}
+%\setcounter{savepage}{\thepage}
+\begin{abstractpage}
+\input{abstract}
+\end{abstractpage}
+
+% Second copy: start a new page, and reset the page number.  This way,
+% the second copy of the abstract is not counted as separate pages.
+\newpage
+\leavevmode
+\newpage
+%\setcounter{page}{\thesavepage}
+\begin{abstractpage}
+\input{abstract}
+\end{abstractpage}
+\newpage
+\leavevmode
+\newpage
+
+

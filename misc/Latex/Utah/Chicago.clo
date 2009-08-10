@@ -1,0 +1,57 @@
+%% Chicago.clo
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Support for Chicago Manual of Style within the context of the
+% uuthesis class.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\captionlineskip{13.5pt}% Single spaced captions
+
+\long\def\@makecaption#1#2{
+  \vskip \captionlineskip
+  \baselineskip=\captionlineskip
+  \setbox\@tempboxa\hbox{{#1}. #2}%
+  \ifdim \wd\@tempboxa >\hsize
+      \unhbox\@tempboxa\par
+    \else
+      \hbox to \hsize{\box\@tempboxa\hfil}%
+  \fi
+}
+
+\newif\ifcaptionON \captionONtrue
+
+\def\caption{
+  \ifcaptionON\refstepcounter\@captype\fi \@dblarg{\@caption\@captype}}
+
+\long\def\@caption#1[#2]#3{\par
+  \ifcaptionON
+    \addcontentsline{\csname ext@#1\endcsname}{#1}
+    {\protect\numberline{\csname the#1\endcsname}{\ignorespaces #2}}
+  \fi
+  \begingroup
+    \@parboxrestore
+    \normalsize
+    \@makecaption{\csname fnum@#1\endcsname}{\ignorespaces #3}\par
+  \endgroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% legends
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\long\def\@make@legend#1{
+  \vskip \captionlineskip
+  \baselineskip=\captionlineskip
+  \setbox\@tempboxa\hbox{#1}%
+  \ifdim \wd\@tempboxa >\hsize
+      \unhbox\@tempboxa\par
+    \else
+      \hbox to \hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+}
+
+\def\legend#1{\par
+  \begingroup
+    \@parboxrestore
+    \normalsize
+    \@make@legend{\ignorespaces #1}\par
+  \endgroup}
+%

@@ -1,0 +1,132 @@
+% Stanford University PhD thesis style for abstracts -- modifications
+% to the article style. This is unofficial so you should always double
+% check against the Registrar's office rules
+%
+% People are free to borrow as long as they change the name and date
+% in the \typeout lines, the name of the file, and acknowledge the
+% work that has been done by previous people.  Ideally they should
+% comment their changes.
+
+% created 6/1/2005 by Emma Pease
+% 
+% some modifications 6/13/2008 on the advice of Sheng-wey Chiow 
+
+%
+% usage
+%
+%\documentclass[12pt]{article}
+
+%\usepackage{suthesis-abstract}
+
+% % you may choose to add the following to adjust line spacing
+% \setstretch{1.4} % default is 1.4
+
+%% modify the following as needed.
+%\title{A precision measurement of the photon recoil\\ using large area
+%  atom interferometry} 
+%\author{Sheng-wey Chiow}
+%\conferralyear{2008}
+%\readingcommittee{Steven Chu}
+%\dept{the Department of Physics}
+
+%\begin{document}
+
+%\maketitle
+
+% body of abstract
+
+% \endabstract
+
+% \end{document}
+
+
+
+%%%%%
+%%%%%   PRELIMS
+%%%%%
+
+\typeout{Document Style Option `suthesis-abstract' for latex2e <$Date: 06/13/2008 $>.}
+\typeout{Note that this tries to fulfill the Stanford Thesis Abstact
+for microfilm  requirements but it is unofficial}
+ 
+
+\oddsidemargin 0in \evensidemargin 0in
+\marginparwidth 40pt \marginparsep 10pt
+\topmargin 0pt \headheight 0pt \headsep 0pt
+\textheight 9in \textwidth 6.5in
+\brokenpenalty=10000
+
+
+% First thing we do is make sure that article has been loaded.  A
+% common error is to try to use suthesis as a documentstyle.
+%\@ifdefined{chapter}{\@latexerr{The `suthesis-abstract' option should be used
+%with the `article' document style}{You should probably read the
+%suthesis abstract documentation.}}{}
+
+\RequirePackage{setspace}
+\setstretch{1.4}
+
+%%%%%
+%%%%%   SETUP COMMANDS PECULIAR TO THESES
+%%%%%
+
+% \author, \title are defined in article; here are the rest of the
+% front matter defining macros
+\def\dept#1{\gdef\@dept{#1}}
+\def\advis@r{Reading Committee Member} % default spelling
+\def\principaladviser#1{\gdef\@principaladviser{#1}}
+\def\readingcommittee#1{\gdef\@readingcommittee{#1}}
+\def\principaladvisor#1{\gdef\@principaladviser{#1}\gdef\advis@r{Advisor}}
+\def\coprincipaladvisor#1{\gdef\@coprincipaladviser{#1}\gdef\advis@r{Co-Advisor}}
+\def\coprincipaladviser#1{\gdef\@coprincipaladviser{#1}\gdef\advis@r{Co-Adviser}}
+\def\firstreader#1{\gdef\@firstreader{#1}}
+\def\secondreader#1{\gdef\@secondreader{#1}}
+\def\thirdreader#1{\gdef\@thirdreader{#1}}
+\def\submitdate#1{\gdef\@submitdate{#1}}
+\def\copyrightyear#1{\gdef\@copyrightyear{#1}} % \author, \title in article
+% needed only for dual language departments
+\def\language#1{\gdef\@language{#1}} \def\@language{babel}
+\def\@title{}\def\@author{}\def\@dept{computer science}
+\def\@principaladviser{}\def\@firstreader{*}\def\@secondreader{*}
+\def\@readingcommittee{}
+\def\@coprincipaladviser{*}
+\def\@thirdreader{*}
+\def\@submitdate{\ifcase\the\month\or
+  January\or February\or March\or April\or May\or June\or
+  July\or August\or September\or October\or November\or December\fi
+  \space \number\the\year}
+\def\conferralyear#1{\gdef\@conferralyear{#1}}
+\def\@conferralyear{\number\the\year}
+
+% define maketitle
+
+\def\maketitle{%
+        \null \leavevmode%\vfill
+{
+\centering    \large\uppercase\expandafter{\@title}\\
+\vskip 15pt plus 10pt minus 5pt
+
+                \rm \@author, Ph.D.\\
+                Stanford University, \@conferralyear\\
+\par}\vskip 20pt plus 10pt minus 5pt
+
+\begin{center}
+    \vspace{\baselineskip}
+
+    \advis@r:  \@readingcommittee
+
+\end{center}
+
+% some people may want to replace the following with \vfill
+\vskip 10pt plus 4pt minus 4pt
+}
+
+
+\def\endabstract{\vskip 20pt plus 10pt  minus 5pt
+
+\hfill\parbox{3.2in}{\raggedright Approved for publication: \\[4mm]
+
+              By:\hfill\rule[-2mm]{74mm}{0.4pt} \\[3pt]
+    \hfill \parbox{74mm}{\raggedright For \@dept} }}
+
+\pagestyle{empty}

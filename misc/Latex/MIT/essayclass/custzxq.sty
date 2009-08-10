@@ -1,0 +1,41 @@
+\ProvidesPackage{custzxq}
+
+\usepackage[sectionbib]{chapterbib}	%% This is important to have chapter-specific references
+
+\usepackage{pslatex}
+%%\usepackage[T1]{fontenc}
+%%\usepackage[latin1]{inputenc}
+\usepackage{geometry}
+\geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+\usepackage{array}
+\usepackage{varioref}
+\usepackage{graphicx}
+\usepackage{setspace}
+
+\makeatletter
+
+\newcommand{\noun}[1]{\textsc{#1}}
+\providecommand{\boldsymbol}[1]{\mbox{\boldmath $#1$}}
+\providecommand{\tabularnewline}{\\}
+\usepackage{verbatim}
+\date{}
+\usepackage{psfrag}
+\usepackage{harvard}
+\usepackage{latexsym}
+\newtheorem{assumption}{Assumption}
+\newtheorem{corollary}{Corollary}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{Hypothesis}{Hypothesis}
+\newtheorem{property}{Property}
+\newenvironment{proof}[1][Proof]{\textbf{#1.} }{\ \hfill $\Diamond$}
+\let\ps@plainOld\ps@plain
+\def\ps@plain{}
+\AtBeginDocument{
+  \renewcommand{\labelitemi}{\small\(\bullet\)}
+  \renewcommand{\labelitemii}{\small\normalfont\bfseries{--}}
+  \renewcommand{\labelitemiii}{\small\(\ast\)}
+  \renewcommand{\labelitemiv}{\small\(\cdot\)}
+}
+\makeatother
