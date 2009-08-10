@@ -1,0 +1,494 @@
+This is pdfTeXk, Version 3.1415926-1.40.9 (Web2C 7.5.7) (format=latex 2008.12.28)  10 AUG 2009 12:05
+entering extended mode
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**main.tex
+(./main.tex
+LaTeX2e <2005/12/01>
+Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, german-x-2008-06-18, ngerman-x-2008-06-18, ancientgreek, ibycus, ar
+abic, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutc
+h, esperanto, estonian, farsi, finnish, french, galician, german, ngerman, mono
+greek, greek, hungarian, icelandic, indonesian, interlingua, irish, italian, la
+tin, lithuanian, mongolian, mongolian2a, bokmal, nynorsk, polish, portuguese, r
+omanian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turki
+sh, ukenglish, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2008/texmf-dist/tex/latex/base/latex209.def
+File: latex209.def 1998/05/13 v0.52 Standard LaTeX file
+
+
+          Entering LaTeX 2.09 COMPATIBILITY MODE
+ *************************************************************
+    !!WARNING!!    !!WARNING!!    !!WARNING!!    !!WARNING!!   
+ 
+ This mode attempts to provide an emulation of the LaTeX 2.09
+ author environment so that OLD documents can be successfully
+ processed. It should NOT be used for NEW documents!
+ 
+ New documents should use Standard LaTeX conventions and start
+ with the \documentclass command.
+ 
+ Compatibility mode is UNLIKELY TO WORK with LaTeX 2.09 style
+ files that change any internal macros, especially not with
+ those that change the FONT SELECTION or OUTPUT ROUTINES.
+ 
+ Therefore such style files MUST BE UPDATED to use
+          Current Standard LaTeX: LaTeX2e.
+ If you suspect that you may be using such a style file, which
+ is probably very, very old by now, then you should attempt to
+ get it updated by sending a copy of this error message to the
+ author of that file.
+ *************************************************************
+
+\footheight=\dimen102
+\@maxsep=\dimen103
+\@dblmaxsep=\dimen104
+\@cla=\count79
+\@clb=\count80
+\mscount=\count81
+(/usr/local/texlive/2008/texmf-dist/tex/latex/base/tracefnt.sty
+Package: tracefnt 1997/05/29 v3.0j Standard LaTeX package (font tracing)
+\tracingfonts=\count82
+LaTeX Info: Redefining \selectfont on input line 101.
+)
+\symbold=\mathgroup4
+\symsans=\mathgroup5
+\symtypewriter=\mathgroup6
+\symitalic=\mathgroup7
+\symsmallcaps=\mathgroup8
+\symslanted=\mathgroup9
+LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 293.
+LaTeX Font Info:    Redeclaring math alphabet \mathsf on input line 294.
+LaTeX Font Info:    Redeclaring math alphabet \mathtt on input line 295.
+LaTeX Font Info:    Redeclaring math alphabet \mathit on input line 301.
+LaTeX Info: Redefining \em on input line 311.
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/base/latexsym.sty
+Package: latexsym 1998/08/17 v2.2e Standard LaTeX package (lasy symbols)
+\symlasy=\mathgroup10
+LaTeX Font Info:    Overwriting symbol font `lasy' in version `bold'
+(Font)                  U/lasy/m/n --> U/lasy/b/n on input line 47.
+)
+LaTeX Font Info:    Redeclaring math delimiter \lgroup on input line 375.
+LaTeX Font Info:    Redeclaring math delimiter \rgroup on input line 377.
+LaTeX Font Info:    Redeclaring math delimiter \bracevert on input line 379.
+)
+(./elsarticle/elsarticle.cls
+Compatibility mode: document class `elsarticle/elsarticle' requested, but `elsa
+rticle' provided.
+
+Document Class: elsarticle 2008/05/22, 1.0.1: Elsevier Science
+\@bls=\dimen105
+(/usr/local/texlive/2008/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/local/texlive/2008/texmf-dist/tex/latex/base/size12.clo
+File: size12.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count83
+\c@section=\count84
+\c@subsection=\count85
+\c@subsubsection=\count86
+\c@paragraph=\count87
+\c@subparagraph=\count88
+\c@figure=\count89
+\c@table=\count90
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+Compatibility mode: definition of \rm ignored.
+Compatibility mode: definition of \sf ignored.
+Compatibility mode: definition of \tt ignored.
+Compatibility mode: definition of \bf ignored.
+Compatibility mode: definition of \it ignored.
+Compatibility mode: definition of \sl ignored.
+Compatibility mode: definition of \sc ignored.
+LaTeX Info: Redefining \cal on input line 506.
+LaTeX Info: Redefining \mit on input line 507.
+\bibindent=\dimen106
+)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2006/02/20 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/local/texlive/2008/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: dvips.def on input line 90.
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen107
+\Gin@req@width=\dimen108
+)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/psnfss/pifont.sty
+Package: pifont 2005/04/12 PSNFSS-v9.2a Pi font support (SPQR) 
+LaTeX Font Info:    Try loading font information for U+pzd on input line 63.
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/psnfss/upzd.fd
+File: upzd.fd 2001/06/04 font definitions for U/pzd.
+)
+LaTeX Font Info:    Try loading font information for U+psy on input line 64.
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/psnfss/upsy.fd
+File: upsy.fd 2001/06/04 font definitions for U/psy.
+))
+\c@tnote=\count91
+\c@fnote=\count92
+\c@cnote=\count93
+\c@ead=\count94
+\c@author=\count95
+\@eadauthor=\toks15
+\c@affn=\count96
+\absbox=\box26
+\keybox=\box27
+\Columnwidth=\dimen109
+\space@left=\dimen110
+\els@boxa=\box28
+\els@boxb=\box29
+\leftMargin=\dimen111
+\@enLab=\toks16
+\@sep=\skip43
+\@@sep=\skip44
+ (./main.spl)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2007/10/30 8.1 (PWD)
+\bibhang=\skip45
+\bibsep=\skip46
+LaTeX Info: Redefining \cite on input line 602.
+\c@NAT@ctr=\count97
+)
+\splwrite=\write3
+\openout3 = `main.spl'.
+
+)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/pst-func/pst-func.sty
+(/usr/local/texlive/2008/texmf-dist/tex/latex/pstricks/pstricks.sty
+Package: pstricks 2008/10/31 v0.39 LaTeX wrapper for `PSTricks' (RN,HV)
+
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pstricks/pstricks.tex
+`PSTricks' v1.26  <2008/07/31> (tvz)
+\pst@dima=\dimen112
+\pst@dimb=\dimen113
+\pst@dimc=\dimen114
+\pst@dimd=\dimen115
+\pst@dimg=\dimen116
+\pst@dimh=\dimen117
+\pst@hbox=\box30
+\pst@boxg=\box31
+\pst@cnta=\count98
+\pst@cntb=\count99
+\pst@cntc=\count100
+\pst@cntd=\count101
+\pst@cntg=\count102
+\pst@cnth=\count103
+\pst@toks=\toks17
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pstricks/pstricks.con)
+\psunit=\dimen118
+\psxunit=\dimen119
+\psyunit=\dimen120
+\pslinewidth=\dimen121
+\pst@customdefs=\toks18
+\pslinearc=\dimen122
+\everypsbox=\toks19
+\psframesep=\dimen123
+\pslabelsep=\dimen124
+\pst@shift=\dimen125
+\theoverlaybox=\box32
+)
+File: pstricks.tex 2008/07/31 v1.26 `PSTricks' (tvz)
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2007/01/21 v2.11 LaTeX color extensions (UK)
+
+(/usr/local/texlive/2008/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package xcolor Info: Package option `override' ignored on input line 216.
+Package xcolor Info: Driver file: dvips.def on input line 225.
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1337.
+Package xcolor Info: Model `RGB' extended on input line 1353.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1355.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1356.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1357.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1358.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1359.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1360.
+))
+Package: pst-func 2008/03/21 package wrapper for pst-func.tex (hv)
+
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pst-func/pst-func.tex
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pstricks/pst-plot.tex
+(/usr/local/texlive/2008/texmf-dist/tex/generic/multido/multido.tex
+ v1.41, 2004/05/18 <tvz>
+\multido@count=\count104
+\multidocount=\count105
+\multido@stuff=\toks20
+)  v1.01, 2008/01/26)
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pstricks-add/pstricks-add.tex
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pstricks/pst-node.tex
+ v1.00, 2007/10/16
+\psrow=\count106
+\pscol=\count107
+\psmatrixcnt=\count108
+\psrowsep=\skip47
+\pscolsep=\skip48
+)
+(/usr/local/texlive/2008/texmf-dist/tex/generic/pst-3d/pst-3d.tex
+(/usr/local/texlive/2008/texmf-dist/tex/generic/xkeyval/pst-xkey.tex
+File: pst-xkey.tex 2005/11/25 v1.6 PSTricks specialization of xkeyval (HA)
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2008/08/13 v2.6a package option processing (HA)
+
+(/usr/local/texlive/2008/texmf-dist/tex/generic/xkeyval/xkeyval.tex
+\XKV@toks=\toks21
+\XKV@tempa@toks=\toks22
+\XKV@depth=\count109
+File: xkeyval.tex 2008/08/13 v2.6a key=value parser (HA)
+)))
+`PST-3d' v1.00, 2005/09/03 (tvz)) `pstricks-add' v3.11, 2008/10/13 (dr,hv)
+\pst@dimm=\dimen126
+\pst@dimn=\dimen127
+\pst@dimo=\dimen128
+\pst@dimp=\dimen129
+\pst@cntm=\count110
+\pst@cntn=\count111
+\pst@cnto=\count112
+\pst@cntp=\count113
+\@zero=\count114
+\pstRadUnit=\dimen130
+\pstRadUnitInv=\dimen131
+\pshooklength=\dimen132
+\pshookwidth=\dimen133
+\@digitcounter=\count115
+\psk@subticksize=\dimen134
+\pst@xticksizeA=\dimen135
+\pst@xticksizeB=\dimen136
+\pst@xticksizeC=\dimen137
+\pst@yticksizeA=\dimen138
+\pst@yticksizeB=\dimen139
+\pst@yticksizeC=\dimen140
+\psk@llx=\dimen141
+\psk@lly=\dimen142
+\psk@urx=\dimen143
+\psk@ury=\dimen144
+\pst@xunit=\dimen145
+\pst@yunit=\dimen146
+\linecnt=\count116
+\chart@ColorIndex=\dimen147
+\chart@ColorStep=\dimen148
+\pst@chartHeight=\dimen149
+\pst@chartStackDepth=\dimen150
+\pst@chartStackWidth=\dimen151
+\chart@Toggle=\count117
+)
+(/usr/local/texlive/2008/texmf-dist/tex/generic/xkeyval/pst-xkey.tex)
+`PST-func' v0.57, 2008/11/14 (hv)
+\psk@zeroLineWidth=\dimen152
+)
+File: pst-func.tex 2008/11/14 v0.57 `PST-func' (hv)
+)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/subfigure/subfigure.sty
+Package: subfigure 2002/03/15 v2.1.5 subfigure package
+\subfigtopskip=\skip49
+\subfigcapskip=\skip50
+\subfigcaptopadj=\dimen153
+\subfigbottomskip=\skip51
+\subfigcapmargin=\dimen154
+\subfiglabelskip=\skip52
+\c@subfigure=\count118
+\c@lofdepth=\count119
+\c@subtable=\count120
+\c@lotdepth=\count121
+
+****************************************
+* Local config file subfigure.cfg used *
+****************************************
+(/usr/local/texlive/2008/texmf-dist/tex/latex/subfigure/subfigure.cfg)
+\subfig@top=\skip53
+\subfig@bottom=\skip54
+)
+(/usr/local/texlive/2008/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count122
+\float@exts=\toks23
+\float@box=\box33
+\@float@everytoks=\toks24
+\@floatcapt=\box34
+) (./main.aux
+(./cover.aux) (./thesis.aux))
+\openout1 = `main.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+\openout2 = `cover.aux'.
+
+ (./cover.tex (./abstract.tex)
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 66.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 66.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 66.
+LaTeX Font Info:    Try loading font information for U+lasy on input line 66.
+
+(/usr/local/texlive/2008/texmf-dist/tex/latex/base/ulasy.fd
+File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
+)) [1
+
+
+
+]
+\openout2 = `thesis.aux'.
+
+ (./thesis.tex [2
+
+
+] [3]
+File: pictures/beach_rock_boat/image.eps Graphic file (type eps)
+ <pictures/beach_rock_boat/image.eps>
+File: pictures/beach_rock_boat/gaussian1.eps Graphic file (type eps)
+
+<pictures/beach_rock_boat/gaussian1.eps>
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 36.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 36.
+File: pictures/beach_rock_boat/gaussian2.eps Graphic file (type eps)
+
+<pictures/beach_rock_boat/gaussian2.eps> [4] [5]
+File: pictures/beach_rock_boat/dog.eps Graphic file (type eps)
+
+<pictures/beach_rock_boat/dog.eps>
+File: pictures/baboon/dog.eps Graphic file (type eps)
+ <pictures/baboon/dog.eps> [6] [7] [8]
+File: pictures/fdog_kernel.eps Graphic file (type eps)
+
+<pictures/fdog_kernel.eps> [9]
+File: pictures/window/image.eps Graphic file (type eps)
+ <pictures/window/image.eps>
+File: pictures/window/dog.eps Graphic file (type eps)
+
+<pictures/window/dog.eps>
+File: pictures/window/cld.eps Graphic file (type eps)
+ <pictures/window/cld.eps> [10] [11]
+File: pictures/texture/image.eps Graphic file (type eps)
+
+<pictures/texture/image.eps>
+File: pictures/texture/dog.eps Graphic file (type eps)
+ <pictures/texture/dog.eps>
+File: pictures/texture/cld.eps Graphic file (type eps)
+
+<pictures/texture/cld.eps> [12]
+File: pictures/coffeebeans/image.eps Graphic file (type eps)
+ <pictures/coffeebeans/image.eps>
+File: pictures/coffeebeans/polarity.eps Graphic file (type eps)
+
+<pictures/coffeebeans/polarity.eps>
+Underfull \hbox (badness 1424) in paragraph at lines 294--294
+\OT1/cmr/m/n/10 in-di-cates isotropic area, black in-di-cates
+ []
+
+[13]
+Overfull \hbox (10.18011pt too wide) in paragraph at lines 310--312
+\OT1/cmr/m/n/12 Segment la-beled with $0$ is isotropic area and use DoG fil-ter
+ $\OML/cmm/m/it/12 H[]$\OT1/cmr/m/n/12 , while anisotropic
+ []
+
+[14]
+File: pictures/shoes/image.eps Graphic file (type eps)
+ <pictures/shoes/image.eps>
+File: pictures/shoes/adaptive.eps Graphic file (type eps)
+ <pictures/shoes/adaptive.eps>
+File: pictures/beach_rock_boat/image.eps Graphic file (type eps)
+
+<pictures/beach_rock_boat/image.eps>
+File: pictures/beach_rock_boat/polarity.eps Graphic file (type eps)
+ <pictures/beach_rock_boat/polarity.eps>
+File: pictures/beach_rock_boat/adaptive.eps Graphic file (type eps)
+
+<pictures/beach_rock_boat/adaptive.eps> [15]
+File: pictures/boat_in_sand/image.eps Graphic file (type eps)
+ <pictures/boat_in_sand/image.eps>
+File: pictures/boat_in_sand/dog.eps Graphic file (type eps)
+
+<pictures/boat_in_sand/dog.eps>
+File: pictures/boat_in_sand/cld.eps Graphic file (type eps)
+ <pictures/boat_in_sand/cld.eps>
+File: pictures/boat_in_sand/adaptive.eps Graphic file (type eps)
+
+<pictures/boat_in_sand/adaptive.eps> [16]
+Overfull \vbox (1.27028pt too high) has occurred while \output is active []
+
+
+[17]
+File: pictures/sand_dollar/image.eps Graphic file (type eps)
+ <pictures/sand_dollar/image.eps>
+File: pictures/sand_dollar/dog.eps Graphic file (type eps)
+ <pictures/sand_dollar/dog.eps>
+File: pictures/sand_dollar/cld.eps Graphic file (type eps)
+
+<pictures/sand_dollar/cld.eps>
+File: pictures/sand_dollar/adaptive.eps Graphic file (type eps)
+ <pictures/sand_dollar/adaptive.eps>
+File: pictures/boat_in_sf/image.eps Graphic file (type eps)
+
+<pictures/boat_in_sf/image.eps>
+File: pictures/boat_in_sf/dog.eps Graphic file (type eps)
+ <pictures/boat_in_sf/dog.eps>
+File: pictures/boat_in_sf/cld.eps Graphic file (type eps)
+
+<pictures/boat_in_sf/cld.eps>
+File: pictures/boat_in_sf/adaptive.eps Graphic file (type eps)
+ <pictures/boat_in_sf/adaptive.eps>
+File: pictures/boat_in_sf/adaptivethin.eps Graphic file (type eps)
+
+<pictures/boat_in_sf/adaptivethin.eps>
+File: pictures/boat_in_sf/canny.eps Graphic file (type eps)
+ <pictures/boat_in_sf/canny.eps> [18]
+[19] (./main.bbl [20]
+./main.bbl:63: Undefined control sequence.
+l.63 \newblock \url
+                   {http://http://gl.ict.usc.edu/Research/DigitalEmily/}, 2008.
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Underfull \hbox (badness 4291) in paragraph at lines 61--64
+\OT1/cmr/m/n/12 ics Lab.  High res-o-lu-tion face scan-ning for "dig-i-tal emil
+y".
+ []
+
+[21])) [22] (./main.aux (./cover.aux) (./thesis.aux)) ) 
+Here is how much of TeX's memory you used:
+ 4505 strings out of 493877
+ 58892 string characters out of 1150590
+ 193319 words of memory out of 3000000
+ 7670 multiletter control sequences out of 10000+50000
+ 18688 words of font info for 68 fonts, out of 3000000 for 5000
+ 714 hyphenation exceptions out of 8191
+ 39i,9n,40p,1167b,369s stack positions out of 5000i,500n,10000p,200000b,50000s
+
+Output written on main.dvi (22 pages, 77256 bytes).

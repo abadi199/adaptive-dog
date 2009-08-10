@@ -1,0 +1,146 @@
+#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options false
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 0
+\use_esint 0
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%!TEX root = main.tex
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+chapter{Introduction}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Test
+\end_layout
+
+\begin_layout Standard
+Several quantum mechanical phenomena can be described in terms of simple
+ harmonic 
+\series bold
+oscillators
+\series default
+ modified by the inclusion of linear friction.
+ For example, deep inelastic scattering and field-theoretic formulations
+ of fundamental anyons can be so modelled.
+ It has recently been shown 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "kang07"
+
+\end_inset
+
+ that squeezed light entering quantum optics can be statewise identified
+ up to automorphisms with damped simple harmonic oscillators.
+ An understanding of such oscillators is therefore of use.
+\end_layout
+
+\begin_layout Standard
+The frictionally damped simple harmonic oscillator can be expressed in a
+ Lagrangian formulation only with the addition of a second variable of motion.
+ A suitable Lagrangian is known to be 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "kang07"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+L=m\dot{x}\dot{y}+\frac{R}{2}(x\dot{y}-\dot{x}y)-kxy\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "main"
+
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+bibliographystyle{plain}
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\end_body
+\end_document

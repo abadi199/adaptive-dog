@@ -1,0 +1,59 @@
+This is BibTeX, Version 0.99c (Web2C 7.5.7)
+The top-level auxiliary file: main.aux
+A level-1 auxiliary file: cover.aux
+A level-1 auxiliary file: thesis.aux
+The style file: plain.bst
+Database file #1: main.bib
+Repeated entry---line 95 of file main.bib
+ : @article{belongie98
+ :                    ,
+I'm skipping whatever remains of this entry
+Warning--empty journal in hays04
+Warning--empty journal in litwinowicz97
+Warning--empty journal in salisbury94
+Warning--empty journal in schumann96
+Warning--empty journal in secord02
+Warning--empty journal in strothotte94
+Warning--empty journal in winkenbach94
+You've used 18 entries,
+            2118 wiz_defined-function locations,
+            609 strings with 7268 characters,
+and the built_in function-call counts, 6841 in all, are:
+= -- 704
+> -- 285
+< -- 9
++ -- 114
+- -- 94
+* -- 463
+:= -- 1079
+add.period$ -- 56
+call.type$ -- 18
+change.case$ -- 100
+chr.to.int$ -- 0
+cite$ -- 25
+duplicate$ -- 271
+empty$ -- 513
+format.name$ -- 94
+if$ -- 1465
+int.to.chr$ -- 0
+int.to.str$ -- 18
+missing$ -- 18
+newline$ -- 94
+num.names$ -- 36
+pop$ -- 109
+preamble$ -- 1
+purify$ -- 83
+quote$ -- 0
+skip$ -- 225
+stack$ -- 0
+substring$ -- 506
+swap$ -- 84
+text.length$ -- 9
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 70
+warning$ -- 7
+while$ -- 75
+width$ -- 20
+write$ -- 196
+(There was 1 error message)

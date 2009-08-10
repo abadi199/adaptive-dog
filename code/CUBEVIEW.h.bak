@@ -1,0 +1,210 @@
+// cubeview.h : interface of the CCubeView class
+//
+// This is a part of the Microsoft Foundation Classes C++ library.
+// Copyright (C) 1992-1998 Microsoft Corporation
+// All rights reserved.
+//
+// This source code is only intended as a supplement to the
+// Microsoft Foundation Classes Reference and related
+// electronic documentation provided with the library.
+// See these sources for detailed information regarding the
+// Microsoft Foundation Classes product.
+#include "gl\gl.h"
+#include "gl\glu.h"
+
+#include "Image.h"
+#include "defines3.h"
+
+class CCubeView : public CView
+{
+protected: // create from serialization only
+	CCubeView();
+	DECLARE_DYNCREATE(CCubeView)
+
+// Attributes
+public:
+	CCubeDoc* GetDocument();
+
+	CPalette    m_cPalette;
+	CPalette    *m_pOldPalette;
+	//CRect       m_oldRect;
+	//float       m_fRadius;
+	CClientDC   *m_pDC;
+
+	CImage m_Image;
+	int	test; // for testing access from dialog to CView
+
+// Operations
+public:
+	void Init();
+	void CreateRGBPalette(void);
+	BOOL bSetupPixelFormat(void);
+	unsigned char ComponentFromIndex(int i, UINT nbits, UINT shift);
+	void DrawScene(void);
+
+	//void OnGpaintOpenGL_MemoryDC();
+	//void OpenGL_InitMemoryDC();
+	//void OpenGL_Init(HDC& m_pDC);
+	//void OpenGL_Init(CDC* memDC);
+	//void OpenGL_Init(HDC& m_pDC);
+	//void OpenGL_CreateRGBPalette(CDC* m_pDC);
+	//unsigned char OpenGL_ComponentFromIndex(int i, UINT nbits, UINT shift);
+	//bool OpenGL_SetDCPixelFormat(HDC hDC, DWORD dwFlags);
+	//BOOL OpenGL_bSetupPixelFormat(CDC* m_pDC);
+	int	LoadBMP(CDC& dc, char* filename, CDC *memDC);
+	//void OpenGL_InitMemDC(int image_x, int image_y);
+	
+
+	void CCubeView::LoadImageBMP(char *filename);
+	int	CCubeView::LoadBMP(char* filename, CDC *memDC);
+	void CCubeView::DrawStrokes(int size, int width, int height);
+	void CCubeView::DrawStrokesRandomLaplacian(int width, int height);
+	void CCubeView::SaveFileBMP( const char* fn );
+	void CCubeView::OnFileSaveBmp();
+	int	CCubeView::LoadBMP2(char* filename, CDC *memDC, int *width, int *height);
+	void CCubeView::InitMemDCandBitmap();
+
+	/*
+	void CCubeView::OnLButtonDown(UINT nFlags, CPoint point); 
+	void CCubeView::OnRButtonDown(UINT nFlags, CPoint point);
+	void CCubeView::OnLButtonUp(UINT nFlags, CPoint point);
+	void CCubeView::OnRButtonUp(UINT nFlags, CPoint point);
+	void CCubeView::OnMouseMove(UINT nFlags, CPoint point);
+	*/
+	void CCubeView::key_input(UINT nChar);
+	void CCubeView::button_pressed(UINT flag, int button, int x, int y);
+	void CCubeView::LeftButtonPressed(int x, int y);
+	void CCubeView::RightButtonPressed(UINT flag, int x, int y);
+	void CCubeView::button_released(int button, int x, int y);
+	void CCubeView::mouse_motion(UINT flag, int x, int y);
+
+
+
+// Overrides
+	// ClassWizard generated virtual function overrides
+	//{{AFX_VIRTUAL(CCubeView)
+	public:
+	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
+	//}}AFX_VIRTUAL
+
+// Implementation
+public:
+	virtual ~CCubeView();
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+	virtual void Dump(CDumpContext& dc) const;
+#endif
+
+protected:
+	BOOL    m_play;
+
+// Generated message map functions
+protected:
+	//{{AFX_MSG(CCubeView)
+	afx_msg void OnFilePlay();
+	afx_msg void OnUpdateFilePlay(CCmdUI* pCmdUI);
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnDestroy();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnTimer(UINT nIDEvent);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	//}}AFX_MSG
+	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnFileOpen();
+	afx_msg void OnPaintRandomDescent();
+	afx_msg void OnPaintGeneticpainter();
+	afx_msg void OnCurveFreehand();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnIpenExternal();
+	afx_msg void OnIpenGvf();
+	afx_msg void OnIpenInternal();
+	afx_msg void OnIpenOutline();
+	afx_msg void OnIpenEdit();
+	afx_msg void OnIpenPaint();
+//	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnIpenEditindiv();
+	afx_msg void OnEdgeCanny();
+	afx_msg void OnEdgePaint();
+	afx_msg void OnEdgeBoost();
+	afx_msg void OnIpenPaint2();
+	afx_msg void OnIpenBilateral();
+	afx_msg void OnIpenBilateral2();
+	afx_msg void OnIpenEmap();
+	afx_msg void OnIpenCartoon();
+	afx_msg void OnIpenWater();
+	afx_msg void OnIpenPenink();
+	afx_msg void OnIpenStipple();
+	afx_msg void OnIpenOil();
+	afx_msg void OnIpenMosaic();
+	afx_msg void OnEdgeTvf();
+	afx_msg void OnEdgeFlowedge();
+	afx_msg void OnEdgeThinning();
+	afx_msg void OnEdgeDog();
+	afx_msg void OnIpenLineart();
+	afx_msg void OnEdgeGabor();
+	afx_msg void OnEdgeFlowBilateral();
+	afx_msg void OnEdgeToon();
+	afx_msg void OnEdgeAbstract();
+	afx_msg void OnEdgeLines();
+	afx_msg void OnEdgeGooch();
+	afx_msg void OnEdgeBilateral();
+	afx_msg void OnEdgeFlowgauss();
+	afx_msg void OnEdgeShock();
+	afx_msg void OnEdgeFdog();
+	afx_msg void OnEdgeFlowbilateral2();
+	afx_msg void OnEdgeAbstract2();
+	afx_msg void OnEdgeFlowshock();
+	afx_msg void OnEdgeFlowshock2();
+	afx_msg void OnEdgeFlowshock3();
+	afx_msg void OnEdgeFlowbilateral3();
+	afx_msg void OnEdgeEtf();
+	afx_msg void OnEdgeCld();
+	afx_msg void OnToonShock();
+	afx_msg void OnToonWoodcut();
+	afx_msg void OnToonWoodcut2();
+	afx_msg void OnToonShock2();
+	afx_msg void OnToonBilateral();
+	afx_msg void OnToonMedian();
+	afx_msg void OnToonBilateral2();
+	afx_msg void OnToonBilateral3();
+	afx_msg void OnToonCurvature();
+	afx_msg void OnToonCurvature2();
+	afx_msg void OnToonCurvature3();
+	afx_msg void OnToonCurvature4();
+	afx_msg void OnToonCurvature5();
+	afx_msg void OnToonCurvature6();
+	afx_msg void OnToonSegment();
+	afx_msg void OnToonCurvature8();
+	afx_msg void OnEdgeVideocld();
+	afx_msg void OnEdgeClditr();
+	afx_msg void OnEdgeCldthin();
+	afx_msg void OnEdgeVideocldthin();
+	afx_msg void OnEdgeCldtexture();
+	afx_msg void OnEdgeVideocldtex();
+	afx_msg void OnToonCurvature9();
+	afx_msg void OnToonUpsampling();
+	afx_msg void OnToonUpsampling2();
+	afx_msg void OnToonDot2dot();
+	afx_msg void OnToonEtfmotion();
+	afx_msg void OnEdgeWeickert();
+	afx_msg void OnEdgeTensor();
+	afx_msg void OnEdgeFbl();
+	afx_msg void OnEdgeVideotoon();
+	afx_msg void OnEdgeVideotoon2();
+	afx_msg void OnEdgeFabstract();
+};
+
+#ifndef _DEBUG  // debug version in cubeview.cpp
+inline CCubeDoc* CCubeView::GetDocument()
+   { return (CCubeDoc*)m_pDocument; }
+#endif
+
+/////////////////////////////////////////////////////////////////////////////

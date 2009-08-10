@@ -1,0 +1,4120 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "stdafx.h"
+#include <cmath>
+#include <deque>
+using namespace std;
+
+#include "Cube.h"
+#include "CubeDoc.h"
+#include "CubeView.h"
+
+#include "globals.h"
+
+#include "Field.h"
+
+#define TRUE_ 1
+#define FALSE_ 0
+
+#define SQRT2	1.414
+
+#define EPS		0.0001
+#define EPS2	0.000001
+
+//#define MAX_ELEMENTS 10000 // for EL
+#define MAX_ELEMENTS 500000 // for NPR
+
+#define HEAP_FULL(n) (n == MAX_ELEMENTS-1)
+#define HEAP_EMPTY(n) (!n)
+
+#define ABS(x)	( ((x)>0) ? (x) : (-(x)) )
+
+#define wZ	0.43
+#define wD 	0.43
+#define wG	0.14
+
+Node *minHeap[MAX_ELEMENTS];
+
+int 	TotalNodes = 0;
+int	max_nodes = 0;
+Image	in_heap;
+
+int		xw, yw;
+int		tex_xw, tex_yw;
+
+int max_grad;
+
+PixeL seeds[MAX_SEEDS];
+int seed_count;
+PixeL new_seed;
+
+PixeL 	seed, Free, st_point, OldFree;
+int		st_x, st_y, motif_exist;
+int		s_x, s_y, e_x, e_y, o_x, o_y;
+int		px, py;
+
+Nodes 	item;
+
+PxlImage	next_pxl;
+PxlImage	cumulative_next_pxl;
+CostImage	pxl_cost;
+
+PixeL seed2;
+Nodes 	item2;
+PxlImage	next_pxl2;
+CostImage	pxl_cost2;
+
+//Image		seed_map;
+Image		boundary;
+Image		tmp_img;
+Image		boundary2;
+//Image		motif;
+//Image	 	laplacian;
+Image	 	gradient;
+Image	 	image;
+
+/* VARIABLE MASK SIZE */
+
+int OLD_MASK_SIZE = 49;
+
+
+
+////////////////////////////////////////////////
+///// Maintaining routines for Minheap of EL
+
+void ClearMinHeap()
+{
+		int	i;
+
+		for (i = 0; i < MAX_ELEMENTS; i++)	{
+			minHeap[i] = NULL;	
+		}
+}
+
+void insert_min_heap(Node *item)
+{
+	int i;
+	if (HEAP_FULL(TotalNodes)) {
+		//The heap is full
+	}
+	i = ++TotalNodes; // starting from index 1, not 0
+	if (TotalNodes >= max_nodes)	max_nodes = TotalNodes;
+	while ( (i!=1) && (item->cost < minHeap[i/2]->cost) ) {
+		minHeap[i/2]->no_in_heap = i;
+		minHeap[i] = minHeap[i/2];
+
+		i /= 2;
+	}
+	item->no_in_heap = i;
+	minHeap[i] = item;
+
+	in_heap[item->loc.x][item->loc.y] = TRUE_;
+}
+
+Node *delete_root()
+{
+	int parent, child;
+	Node *item, *temp;
+	if(HEAP_EMPTY(TotalNodes)) {
+		//The heap is empty
+	}
+	/* save the value of the element with the highest coord */
+	item = minHeap[1];	/* item <- root */
+	/* use last element in heap to adjust heap */
+	temp = minHeap[TotalNodes--];
+	parent = 1;
+	child = 2;
+	while (child <= TotalNodes) {
+		/* find the larget child of the current parent */
+		if ((child < TotalNodes) && (minHeap[child]->cost > minHeap[child+1]->cost))
+			child++;
+		if (temp->cost <= minHeap[child]->cost) break;
+		/* move to the next lower level */
+		minHeap[child]->no_in_heap = parent;
+		minHeap[parent] = minHeap[child];
+		parent = child;
+		child *= 2;
+	}
+	temp->no_in_heap = parent;
+	minHeap[parent] = temp;
+
+	in_heap[item->loc.x][item->loc.y] = FALSE_;
+	item->no_in_heap = 0;
+
+	return item;
+}
+
+void raise_to_root(int no)
+{
+	int parent, child;
+	Node *item;
+
+	if (no==1) return; /* nothing to do */
+
+	item = minHeap[no];
+
+	child = no; /* child >= 2 */
+
+	while (1) {
+		parent = child/2;
+		minHeap[parent]->no_in_heap = child;
+		minHeap[child] = minHeap[parent];
+		if (parent == 1) break;
+		child = parent;
+	}
+
+	item->no_in_heap = 1;
+	minHeap[1] = item; /* raise the target item to root */
+}
+
+void delete_item(int no)
+{
+	raise_to_root(no);
+	delete_root();
+}
+
+Node *extract_min()
+{
+	return( minHeap[1] );
+}
+
+int In(Node *node)
+{
+	int i;
+
+	for(i=1; i<=TotalNodes; ++i) {
+		if( minHeap[i] == node )
+			return i; /* location number */
+	}
+	return 0;
+}
+
+int No_(Node *node)
+{
+	int i;
+
+	for(i=1; i<=TotalNodes; ++i) {
+		/* YOU CAN CHANGE THIS PART */
+		if( minHeap[i] == node )
+			return i;
+	}
+	//not in
+	exit(1);
+}
+
+void print_node(Node *item)
+{
+	printf("(%d, %d) : %f\n",item->coord.x, item->coord.y, item->cost);
+}
+
+void print_min_heap()
+{
+	int i;
+	for(i=1; i<=TotalNodes; ++i) 
+		printf("%5.1f ",minHeap[i]->cost);
+	printf("\n");
+}
+
+/////////////////////////////////////////////////////////////
+///// Image Handling routines
+
+void ClearImage(int width, int height, Image image)
+{
+	int	x, y;
+
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++)
+			image[x][y] = 0;
+}
+
+void	ClearPxlImage(int width, int height, PxlImage& image)
+{
+	int	x, y;
+
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++) {
+			image[x][y][0] = x;
+			image[x][y][1] = y;
+		}
+}
+
+void	ClearCostImage(int width, int height, CostImage& image)
+{
+	int	x, y;
+
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++) {
+			image[x][y] = MAX_COST;
+		}
+}
+
+void GetImage(int width, int height, Image image, GLubyte *Dbuffer)
+{
+	GLubyte	*glPixel;
+	int 	r, g, b;
+	int 	min, max;
+	int 	i, j;
+
+	glPixel = Dbuffer;
+	for (j=0; j < height; j++)
+		for (i=0; i < width; i++) {
+			r = *glPixel;	glPixel++;
+			g = *glPixel;	glPixel++;
+			b = *glPixel;	glPixel++;
+			if (r > g) {
+				max = r;
+				min = g;
+			}
+			else {	
+				max = g;
+				min = r;	
+			}
+			if (b > max)
+				max = b;
+			else if (b < min)
+				min = b;
+			image[i][j] = (int) ((min + max) / 2.0);
+
+		}
+}
+
+void GetGrayImage(int width, int height, imatrix& image, GLubyte *Dbuffer)
+{
+	GLubyte	*glPixel;
+	int 	r, g, b;
+	int 	min, max;
+	int 	i, j;
+
+	image.init(width, height);
+
+	glPixel = Dbuffer;
+	for (j=0; j < height; j++)
+		for (i=0; i < width; i++) {
+			r = *glPixel;	glPixel++;
+			g = *glPixel;	glPixel++;
+			b = *glPixel;	glPixel++;
+			if (r > g) {
+				max = r;
+				min = g;
+			}
+			else {	
+				max = g;
+				min = r;	
+			}
+			if (b > max)
+				max = b;
+			else if (b < min)
+				min = b;
+			image[i][j] = (int) ((min + max) / 2.0);
+
+		}
+}
+
+
+
+void GetColorImage(int width, int height, cimatrix& cmap, GLubyte *Dbuffer)
+{
+	GLubyte	*glPixel;
+	int 	r, g, b;
+	int 	i, j;
+
+	cmap.init(width, height);
+
+	glPixel = Dbuffer;
+	for (j=0; j < height; j++)
+		for (i=0; i < width; i++) {
+			r = *glPixel;	glPixel++;
+			g = *glPixel;	glPixel++;
+			b = *glPixel;	glPixel++;
+			cmap[i][j].r = (GLubyte)r;
+			cmap[i][j].g = (GLubyte)g;
+			cmap[i][j].b = (GLubyte)b;
+		}
+}
+
+int getGradient(int width, int height, Image gradient, Image image)
+{
+	int	dx, dy;
+	int	i, j;
+	int MAX_GRADIENT = -1;
+
+	for (j = 0; j < height - 1; j++)
+		for (i = 0; i < width - 1; i++) {
+			dx = image[i+1][j] - image[i][j];
+			dy = image[i][j+1] - image[i][j];
+			gradient[i][j] = dx * dx + dy * dy;
+
+			if (gradient[i][j] > MAX_GRADIENT) MAX_GRADIENT = gradient[i][j];
+		}
+
+	for (i = 0; i < width - 1; i++)
+		gradient[i][height - 1] = gradient[i][height - 2];
+
+	for (j = 0; j < height - 1; j++)
+		gradient[width - 1][j] = gradient[width - 2][j];
+
+	gradient[width - 1][height - 1]
+		= (gradient[width - 1][height - 2] 
+			+ gradient[width - 2][height - 1]) / 2;
+
+	return (MAX_GRADIENT);
+}
+
+int getSobelGradient(int width, int height, Image gradient, Image image)
+{
+	int	dx, dy;
+	int	i, j;
+	int MAX_GRADIENT = -1;
+
+	for (j = 1; j <= height - 2; j++)
+		for (i = 1; i <= width - 2; i++) {
+			dx = image[i+1][j] - image[i][j];
+			dy = image[i][j+1] - image[i][j];
+			gradient[i][j] = dx * dx + dy * dy;
+
+			if (gradient[i][j] > MAX_GRADIENT) MAX_GRADIENT = gradient[i][j];
+		}
+
+	for (i = 0; i < width - 1; i++) {
+		gradient[i][0] = gradient[i][1];
+		gradient[i][height - 1] = gradient[i][height - 2];
+	}
+
+	for (j = 0; j < height - 1; j++) {
+		gradient[0][j] = gradient[1][j];
+		gradient[width - 1][j] = gradient[width - 2][j];
+	}
+
+	gradient[0][0]	= (gradient[0][1]+gradient[1][0])/2;
+	gradient[0][height-1]	= (gradient[0][height-2]+gradient[1][height-1])/2;
+	gradient[width-1][0]	= (gradient[width-1][1]+gradient[width-2][0])/2;
+	gradient[width-1][height-1]	= (gradient[width-1][height-2]+gradient[width-2][height-1])/2;
+
+	return (MAX_GRADIENT);
+}
+
+int getBlurredGradient(int width, int height, Image& gradient, Image& image, int N)
+{
+	int	dx, dy;
+	int	i, j;
+	int MAX_GRADIENT = -1;
+
+	Image tmp;
+	
+	/// copy image to tmp
+	for (j = 0; j < height; j++) {
+		for (i = 0; i < width; i++) {
+			tmp[i][j] = image[i][j];
+		}
+	}
+
+	for (int k = 0; k < N; k++) { // Do the blurring N times 
+		
+		for (j = 1; j < height-1; j++) {
+			for (i = 1; i < width-1; i++) {
+				gradient[i][j] = round(
+					(tmp[i-1][j-1]+tmp[i][j-1]+tmp[i+1][j-1]
+					+tmp[i-1][j]+tmp[i][j]+tmp[i+1][j]
+					+tmp[i-1][j+1]+tmp[i][j+1]+tmp[i+1][j+1]) 
+					/ 9.0 );
+				
+			}
+		}
+
+		// Boundaries
+		for (i = 0; i < width - 1; i++) {
+			gradient[i][0] = gradient[i][1];
+			gradient[i][height - 1] = gradient[i][height - 2];
+		}
+		for (j = 0; j < height - 1; j++) {
+			gradient[0][j] = gradient[1][j];
+			gradient[width-1][j] = gradient[width-2][j];
+		}
+
+		// copy gradient to tmp
+		if (k != N-1) { // last step can be skipped
+			for (j = 0; j < height - 1; j++)
+				for (i = 0; i < width - 1; i++) {
+					tmp[i][j] = gradient[i][j];
+				}
+		}
+	}
+
+	//////////////////////////////////////////////////////////
+	// Get the gradient values
+	for (j = 0; j < height - 1; j++)
+			for (i = 0; i < width - 1; i++) {
+				dx = tmp[i+1][j] - tmp[i][j];
+				dy = tmp[i][j+1] - tmp[i][j];
+				//gradient[i][j] = sqrt(dx * dx + dy * dy);
+				gradient[i][j] = dx * dx + dy * dy;
+				if (gradient[i][j] > MAX_GRADIENT) MAX_GRADIENT = gradient[i][j];
+			}
+
+	// Assign values on Boundaries
+	for (i = 0; i < width - 1; i++)
+		gradient[i][height - 1] = gradient[i][height - 2];
+
+	for (j = 0; j < height - 1; j++)
+		gradient[width - 1][j] = gradient[width - 2][j];
+
+	gradient[width - 1][height - 1]
+		= (gradient[width - 1][height - 2] 
+			+ gradient[width - 2][height - 1]) / 2;
+	
+	return (MAX_GRADIENT);
+}
+
+
+Field gfield, gfield2;
+
+void InitGradField(int image_x, int image_y, Field& gfield, Image& image)
+{
+	gfield.init(image_x, image_y); // allocate gradient field
+	//gfield.set(image, gradient);
+	gfield.set(image);
+	
+}
+
+void InitGradField(int image_x, int image_y, Field& gfield, imatrix& gray)
+{
+	gfield.init(image_x, image_y); // allocate gradient field
+	//gfield.set(image, gradient);
+	gfield.set(gray);
+	
+}
+
+void AlignGradient(int image_x, int image_y, Field& gfield, int size)
+{
+	int	x, y;
+	int	i, j;
+	Grad	sum;
+	int N;
+	
+	for (y = 0; y < image_y; y++) {
+		for (x = 0; x < image_x; x++) {
+			sum.gx = sum.gy = sum.mag = 0.0;
+			N = 0;
+			for (j = -size/2; j <= size/2; j++) {
+				for (i = -size/2; i <= size/2; i++) {
+					if (x+i >= 0 && x+i < image_x && y+j >= 0 && y+j < image_y) {
+						N++;
+						sum.gx += gfield[x+i][y+j].gx * gfield[x+i][y+j].mag;
+						sum.gy += gfield[x+i][y+j].gy * gfield[x+i][y+j].mag;
+						sum.mag += gfield[x+i][y+j].mag;
+						//if (gfield[x+i][y+j].mag > 0.5)
+						//	TRACE("mag[%d][%d] = %.2f\n", x+i, y+j, gfield[x+i][y+j].mag);
+					}
+				}
+			}
+			sum.mag /= (double)N;
+			//if (sum.mag > gfield[x][y].mag) { 
+			// Gradient magnitude got bigger! Now update changes
+				gfield[x][y].mag = sum.mag;
+				gfield[x][y].gx = sum.gx;
+				gfield[x][y].gy = sum.gy;
+			//}
+		}
+	}
+
+}
+
+void AlignGradient2(int image_x, int image_y, Field& gfield, int size)
+// Make changes to each pixel independently using the 'source' information
+{
+	int	x, y;
+	int	i, j;
+	Grad	sum;
+	int N;
+	Field tmp;
+
+	tmp = gfield;
+	
+	for (y = 0; y < image_y; y++) {
+		for (x = 0; x < image_x; x++) {
+			sum.gx = sum.gy = sum.mag = 0.0;
+			N = 0;
+			for (j = -size/2; j <= size/2; j++) {
+				for (i = -size/2; i <= size/2; i++) {
+					if (x+i >= 0 && x+i < image_x && y+j >= 0 && y+j < image_y) {
+						N++;
+						//TRACE("mag[%d][%d] = %.2f\n", x+i, y+j, tmp[x+i][y+j].mag);
+						sum.gx += tmp[x+i][y+j].gx * tmp[x+i][y+j].mag;
+						sum.gy += tmp[x+i][y+j].gy * tmp[x+i][y+j].mag;
+						sum.mag += tmp[x+i][y+j].mag;
+						//if (tmp[x+i][y+j].mag > 0.5)
+						//TRACE("mag[%d][%d] = %.2f\n", x+i, y+j, gfield[x+i][y+j].mag);
+					}
+				}
+			}
+			sum.mag /= (double)N;
+			//if (sum.mag > gfield[x][y].mag) { 
+			// Gradient magnitude got bigger! Now update changes
+				gfield[x][y].mag = sum.mag;
+				gfield[x][y].gx = sum.gx;
+				gfield[x][y].gy = sum.gy;
+			//}
+		}
+	}
+
+}
+
+void GVF(int image_x, int image_y, Field& gfield, int N)
+{
+	int	x, y;
+	int	i;
+	//int N = 150;
+	//double mu = 0.5;
+	double mu = 0.2;
+	Field gvf, gvf_tmp;
+	double	fx, fy, u, v;
+	double	sqr_mag_f, lap_u, lap_v;
+	//double THRES = 0.8;
+
+	
+	gvf.init(gfield.getRow(), gfield.getCol()); // init gvf
+	gvf_tmp.init(gfield.getRow(), gfield.getCol()); // init gvf
+	gvf.copy(gfield); // copy gfield to gvf_tmp
+	gvf_tmp.copy(gfield); // copy gfield to gvf_tmp
+		
+	for (i = 0; i < N; i++) {
+		for (y = 0; y < image_y; y++) {
+			for (x = 0; x < image_x; x++) {
+				//sum.gx = sum.gy = sum.mag = 0.0;
+				fx = gfield[x][y].gx;
+				fy = gfield[x][y].gy;
+				u = gvf[x][y].gx;
+				v = gvf[x][y].gy;
+				sqr_mag_f = fx*fx + fy*fy; // This is fixed throughout the iteration
+				////////////////////////////////////////////
+				// Compute the laplacian of the current u and v
+				lap_u = lap_v = 0;
+				// lap_u
+				if (x-1 >= 0) lap_u += gvf[x-1][y].gx;
+				else lap_u += gvf[x][y].gx;
+				if (x+1 <= image_x-1) lap_u += gvf[x+1][y].gx;
+				else lap_u += gvf[x][y].gx;
+				if (y-1 >= 0) lap_u += gvf[x][y-1].gx;
+				else lap_u += gvf[x][y].gx;
+				if (y+1 <= image_y-1) lap_u += gvf[x][y+1].gx;
+				else lap_u += gvf[x][y].gx;
+				lap_u -= 4*gvf[x][y].gx;
+				// lap_v
+				if (x-1 >= 0) lap_v += gvf[x-1][y].gy;
+				else lap_v += gvf[x][y].gy;
+				if (x+1 <= image_x-1) lap_v += gvf[x+1][y].gy;
+				else lap_v += gvf[x][y].gy;
+				if (y-1 >= 0) lap_v += gvf[x][y-1].gy;
+				else lap_v += gvf[x][y].gy;
+				if (y+1 <= image_y-1) lap_v += gvf[x][y+1].gy;
+				else lap_v += gvf[x][y].gy;
+				lap_v -= 4*gvf[x][y].gy;
+				
+				u = u + mu*lap_u - sqr_mag_f * (u - fx);
+				v = v + mu*lap_v - sqr_mag_f * (v - fy);
+				//u = u + mu*lap_u - sqr_mag_f * pow((u - fx), 2);
+				//v = v + mu*lap_v - sqr_mag_f * pow((v - fy), 2);
+				//if (i > 10) {
+				//	TRACE("[%d][%d]u = %.1f\n", x, y, u);
+				//	TRACE("[%d][%d]v = %.1f\n", x, y, v);
+				//}
+				
+				//if ( sqrt(u*u + v*v) / gvf_tmp.GetMaxGrad() > gvf_tmp[x][y].mag ) {
+				//	gvf_tmp[x][y].mag = sqrt(u*u + v*v) / gvf_tmp.GetMaxGrad();
+					gvf_tmp[x][y].gx = u;
+					gvf_tmp[x][y].gy = v;
+				//}
+				//TRACE("u = %0.1f, v = %0.1f\n", u, v);
+				//TRACE("sqrt(u*u + v*v) = %0.1f\n", sqrt(u*u + v*v));
+				//TRACE("gvf_tmp.GetMaxGrad() = %0.1f\n", gvf_tmp.GetMaxGrad());
+				//TRACE("gvf_tmp[x][y].mag = %0.2f\n", gvf_tmp[0][0].mag);
+				
+			}
+			
+		}
+		gvf.copy(gvf_tmp);
+		//TRACE("[%d]: gvf_tmp[19][0].mag = %0.2f\n", i, gvf_tmp[19][0].mag);
+	}
+	gfield.copy(gvf);
+
+	/*
+	double sum2 = 0.0;
+	for (y = 0; y < image_y; y++) {
+		for (x = 0; x < image_x; x++) {
+			//sum.gx = sum.gy = sum.mag = 0.0;
+			sum2 += gfield[x][y].mag;
+			//TRACE("gfield[%d][%d].mag = %0.2f\n", x, y, gfield[x][y].mag);
+		}
+	}
+	TRACE("sum2 = %f\n", sum2);
+	sum2 /= ((double)image_x * image_y);
+	TRACE("sum = %f\n", sum2);
+	*/
+}
+
+void GVF2(int image_x, int image_y, Field& gfield, int N, double mu)
+// included mu as a parameter
+{
+	int	x, y;
+	int	i;
+	//int N = 150;
+	//double mu = 0.5;
+	//double mu = 0.2;
+	Field gvf, gvf_tmp;
+	double	fx, fy, u, v;
+	double	sqr_mag_f, lap_u, lap_v;
+	//double THRES = 0.8;
+	
+	gvf.init(gfield.getRow(), gfield.getCol()); // init gvf
+	gvf_tmp.init(gfield.getRow(), gfield.getCol()); // init gvf
+	gvf.copy(gfield); // copy gfield to gvf_tmp
+	gvf_tmp.copy(gfield); // copy gfield to gvf_tmp
+		
+	for (i = 0; i < N; i++) {
+		for (y = 0; y < image_y; y++) {
+			for (x = 0; x < image_x; x++) {
+				//sum.gx = sum.gy = sum.mag = 0.0;
+				fx = gfield[x][y].gx;
+				fy = gfield[x][y].gy;
+				u = gvf[x][y].gx;
+				v = gvf[x][y].gy;
+				sqr_mag_f = fx*fx + fy*fy; // This is fixed throughout the iteration
+				////////////////////////////////////////////
+				// Compute the laplacian of the current u and v
+				lap_u = lap_v = 0;
+				// lap_u
+				if (x-1 >= 0) lap_u += gvf[x-1][y].gx;
+				else lap_u += gvf[x][y].gx;
+				if (x+1 <= image_x-1) lap_u += gvf[x+1][y].gx;
+				else lap_u += gvf[x][y].gx;
+				if (y-1 >= 0) lap_u += gvf[x][y-1].gx;
+				else lap_u += gvf[x][y].gx;
+				if (y+1 <= image_y-1) lap_u += gvf[x][y+1].gx;
+				else lap_u += gvf[x][y].gx;
+				lap_u -= 4*gvf[x][y].gx;
+				// lap_v
+				if (x-1 >= 0) lap_v += gvf[x-1][y].gy;
+				else lap_v += gvf[x][y].gy;
+				if (x+1 <= image_x-1) lap_v += gvf[x+1][y].gy;
+				else lap_v += gvf[x][y].gy;
+				if (y-1 >= 0) lap_v += gvf[x][y-1].gy;
+				else lap_v += gvf[x][y].gy;
+				if (y+1 <= image_y-1) lap_v += gvf[x][y+1].gy;
+				else lap_v += gvf[x][y].gy;
+				lap_v -= 4*gvf[x][y].gy;
+				
+				u = u + mu*lap_u - sqr_mag_f * (u - fx);
+				v = v + mu*lap_v - sqr_mag_f * (v - fy);
+				//u = u + mu*lap_u - sqr_mag_f * pow((u - fx), 2);
+				//v = v + mu*lap_v - sqr_mag_f * pow((v - fy), 2);
+				//if (i > 10) {
+				//	TRACE("[%d][%d]u = %.1f\n", x, y, u);
+				//	TRACE("[%d][%d]v = %.1f\n", x, y, v);
+				//}
+				
+				//if ( sqrt(u*u + v*v) / gvf_tmp.GetMaxGrad() > gvf_tmp[x][y].mag ) {
+				//	gvf_tmp[x][y].mag = sqrt(u*u + v*v) / gvf_tmp.GetMaxGrad();
+					gvf_tmp[x][y].gx = u;
+					gvf_tmp[x][y].gy = v;
+				//}
+				//TRACE("u = %0.1f, v = %0.1f\n", u, v);
+				//TRACE("sqrt(u*u + v*v) = %0.1f\n", sqrt(u*u + v*v));
+				//TRACE("gvf_tmp.GetMaxGrad() = %0.1f\n", gvf_tmp.GetMaxGrad());
+				//TRACE("gvf_tmp[x][y].mag = %0.2f\n", gvf_tmp[0][0].mag);
+				
+			}
+			
+		}
+		gvf.copy(gvf_tmp);
+		//TRACE("[%d]: gvf_tmp[19][0].mag = %0.2f\n", i, gvf_tmp[19][0].mag);
+	}
+	gfield.copy(gvf);
+
+	/*
+	double sum2 = 0.0;
+	for (y = 0; y < image_y; y++) {
+		for (x = 0; x < image_x; x++) {
+			//sum.gx = sum.gy = sum.mag = 0.0;
+			sum2 += gfield[x][y].mag;
+			//TRACE("gfield[%d][%d].mag = %0.2f\n", x, y, gfield[x][y].mag);
+		}
+	}
+	TRACE("sum2 = %f\n", sum2);
+	sum2 /= ((double)image_x * image_y);
+	TRACE("sum = %f\n", sum2);
+	*/
+}
+
+void GVF3(int image_x, int image_y, Field& gfield, int N, double factor)
+// Adaptive GVF
+{
+	int	x, y;
+	int	i;
+	//int N = 150;
+	//double mu = 0.5;
+	//double mu = 0.2;
+	Field gvf, gvf_tmp;
+	double	fx, fy, u, v;
+	double	sqr_mag_f, lap_u, lap_v;
+	double mu;
+	//double THRES = 0.8;
+
+	gvf.init(gfield.getRow(), gfield.getCol()); // init gvf
+	gvf_tmp.init(gfield.getRow(), gfield.getCol()); // init gvf
+	gvf.copy(gfield); // copy gfield to gvf_tmp
+	gvf_tmp.copy(gfield); // copy gfield to gvf_tmp
+		
+	for (i = 0; i < N; i++) {
+		for (y = 0; y < image_y; y++) {
+			for (x = 0; x < image_x; x++) {
+				//sum.gx = sum.gy = sum.mag = 0.0;
+				fx = gfield[x][y].gx;
+				fy = gfield[x][y].gy;
+				u = gvf[x][y].gx;
+				v = gvf[x][y].gy;
+				sqr_mag_f = fx*fx + fy*fy; // This is fixed throughout the iteration
+				////////////////////////////////////////////
+				// Compute the laplacian of the current u and v
+				lap_u = lap_v = 0;
+				// lap_u
+				if (x-1 >= 0) lap_u += gvf[x-1][y].gx;
+				else lap_u += gvf[x][y].gx;
+				if (x+1 <= image_x-1) lap_u += gvf[x+1][y].gx;
+				else lap_u += gvf[x][y].gx;
+				if (y-1 >= 0) lap_u += gvf[x][y-1].gx;
+				else lap_u += gvf[x][y].gx;
+				if (y+1 <= image_y-1) lap_u += gvf[x][y+1].gx;
+				else lap_u += gvf[x][y].gx;
+				lap_u -= 4*gvf[x][y].gx;
+				// lap_v
+				if (x-1 >= 0) lap_v += gvf[x-1][y].gy;
+				else lap_v += gvf[x][y].gy;
+				if (x+1 <= image_x-1) lap_v += gvf[x+1][y].gy;
+				else lap_v += gvf[x][y].gy;
+				if (y-1 >= 0) lap_v += gvf[x][y-1].gy;
+				else lap_v += gvf[x][y].gy;
+				if (y+1 <= image_y-1) lap_v += gvf[x][y+1].gy;
+				else lap_v += gvf[x][y].gy;
+				lap_v -= 4*gvf[x][y].gy;
+				
+				//u = u + mu*lap_u - sqr_mag_f * (u - fx);
+				//v = v + mu*lap_v - sqr_mag_f * (v - fy);
+				/////////////////////////////////////////////
+				// Adaptive!
+				mu = ((double)gray2[x][y] / 255.0) * factor + 0.01;
+				u = u + mu*lap_u - sqr_mag_f * (u - fx);
+				v = v + mu*lap_v - sqr_mag_f * (v - fy);
+				//////////////////////////////////////////
+				//u = u + mu*lap_u - sqr_mag_f * pow((u - fx), 2);
+				//v = v + mu*lap_v - sqr_mag_f * pow((v - fy), 2);
+				//if (i > 10) {
+				//	TRACE("[%d][%d]u = %.1f\n", x, y, u);
+				//	TRACE("[%d][%d]v = %.1f\n", x, y, v);
+				//}
+				
+				//if ( sqrt(u*u + v*v) / gvf_tmp.GetMaxGrad() > gvf_tmp[x][y].mag ) {
+				//	gvf_tmp[x][y].mag = sqrt(u*u + v*v) / gvf_tmp.GetMaxGrad();
+					gvf_tmp[x][y].gx = u;
+					gvf_tmp[x][y].gy = v;
+				//}
+				//TRACE("u = %0.1f, v = %0.1f\n", u, v);
+				//TRACE("sqrt(u*u + v*v) = %0.1f\n", sqrt(u*u + v*v));
+				//TRACE("gvf_tmp.GetMaxGrad() = %0.1f\n", gvf_tmp.GetMaxGrad());
+				//TRACE("gvf_tmp[x][y].mag = %0.2f\n", gvf_tmp[0][0].mag);
+				
+			}
+			
+		}
+		gvf.copy(gvf_tmp);
+		//TRACE("[%d]: gvf_tmp[19][0].mag = %0.2f\n", i, gvf_tmp[19][0].mag);
+	}
+	gfield.copy(gvf);
+
+	/*
+	double sum2 = 0.0;
+	for (y = 0; y < image_y; y++) {
+		for (x = 0; x < image_x; x++) {
+			//sum.gx = sum.gy = sum.mag = 0.0;
+			sum2 += gfield[x][y].mag;
+			//TRACE("gfield[%d][%d].mag = %0.2f\n", x, y, gfield[x][y].mag);
+		}
+	}
+	TRACE("sum2 = %f\n", sum2);
+	sum2 /= ((double)image_x * image_y);
+	TRACE("sum = %f\n", sum2);
+	*/
+}
+
+void getLaplacian(int width, int height, Image laplacian, Image image)
+{
+	int	i, j;
+
+	for (j = 1; j < height - 1; j++)
+		for (i = 1; i < width - 1; i++) {
+			laplacian[i][j] = 4 * image[i][j] -	image[i][j-1] - image[i-1][j] - image[i+1][j] - image[i][j+1];
+		}
+
+	for (i = 1; i < width - 1; i++) {
+		laplacian[i][0] = laplacian[i][1];
+		laplacian[i][height - 1] = laplacian[i][height - 2];
+	}
+
+	for (j = 1; j < height - 1; j++) {
+		laplacian[0][j] = laplacian[1][j];
+		laplacian[width - 1][j] = laplacian[width - 2][j];
+	}
+
+	laplacian[0][0] = (laplacian[0][1] + laplacian[1][0]) / 2;
+	laplacian[0][height - 1] 
+		= (laplacian[0][height - 2] + laplacian[1][height - 1]) / 2;
+	laplacian[width - 1][0] 
+		= (laplacian[width - 1][1] + laplacian[width - 2][0]) / 2;
+	laplacian[width - 1][height - 1]
+		= (laplacian[width - 1][height - 2] + laplacian[width - 2][height - 1]) / 2;
+}
+
+
+//////////////////////////////////////////////////////////////
+/// Drawing routines
+
+void DrawPoint(int cur_x, int cur_y, int size)
+{
+	long	vert[2];
+
+	glPointSize((float)size);
+
+	vert[0] = cur_x;	vert[1] = cur_y;
+	glBegin(GL_POINTS);
+		glVertex2i(vert[0], vert[1]);
+	glEnd();
+}
+
+void DrawPointDC(CClientDC *dc, int x, int y, int size, int r, int g, int b)
+{
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, size, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+	dc->MoveTo(x, y);
+	dc->LineTo(x, y);
+	dc->SelectObject(pOldPen);
+}
+
+void DrawGridLinesDC(CClientDC *dc, int y, int size, int r, int g, int b)
+{
+	int	i;
+	
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, size, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	if(fg_num)
+	for(i=1; i<=9; i++){
+		dc->MoveTo(i*(IMAGE_X/10), 0);
+		dc->LineTo(i*(IMAGE_X/10), y);
+		dc->LineTo((int)(i*(IMAGE_X*3/10)-IMAGE_X), (int)(IMAGE_Y-1));
+		
+	}
+	for(i=1; i<=4; i++){
+		dc->MoveTo(0, i*(y/5));
+		dc->LineTo(IMAGE_X-1, i*(y/5));
+		
+	}
+	
+	for(i=1; i<=4; i++){
+		
+		dc->MoveTo(0, (int)(y + ((IMAGE_Y-y)/20.)*i*i) );
+		dc->LineTo(IMAGE_X-1, (int)(y + ((IMAGE_Y-y)/20.)*i*i) );
+		
+	}
+	dc->SelectObject(pOldPen);
+}
+
+void DrawPointMemDC(CDC *dc, int x, int y, int size, int r, int g, int b)
+{
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, size, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+	dc->MoveTo(x, y);
+	dc->LineTo(x, y);
+	dc->SelectObject(pOldPen);
+}
+
+void DrawEdgeMemDC(CDC *dc, PixeL free, PixeL seed, int r, int g, int b)
+{
+	short redvec[3] = {255, 0, 0}; 
+	int 	vert[2], old[2];
+
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, 2, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	old[0] = free.x;
+	old[1] = free.y;
+	while(1) {
+		vert[0] = next_pxl[old[0]][old[1]][0];
+		vert[1] = next_pxl[old[0]][old[1]][1];
+		dc->MoveTo(old[0], IMAGE_Y-1-old[1]);
+		dc->LineTo(vert[0], IMAGE_Y-1-vert[1]);
+		old[0] = vert[0];
+		old[1] = vert[1];
+		if (vert[0] == seed.x && vert[1] == seed.y) break;
+	}
+
+	dc->SelectObject(pOldPen);
+}
+
+
+void DrawCumulativeEdgeMemDC(CDC *dc, PixeL free, PixeL seed, int r, int g, int b)
+{
+	short redvec[3] = {255, 0, 0}; 
+	long 	vert[2];
+	long 	old[2];
+
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, 2, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	old[0] = seed.x;
+	old[1] = seed.y;
+	while(1) {
+		vert[0] = cumulative_next_pxl[old[0]][old[1]][0];
+		vert[1] = cumulative_next_pxl[old[0]][old[1]][1];
+		dc->MoveTo(old[0], IMAGE_Y-1-old[1]);
+		dc->LineTo(vert[0], IMAGE_Y-1-vert[1]);
+		old[0] = vert[0];
+		old[1] = vert[1];
+		if (vert[0] == free.x && vert[1] == free.y) break;
+	}
+
+	dc->SelectObject(pOldPen);
+}
+
+////////////////////////////////////////////////////////////////
+// Draw Uniform Cubic B-spline from free-hand curve
+
+inline bool even(int a)
+{
+  return ((a%2) == 0); // it returns 1 or 0
+}
+
+
+void WaveletTransform2(CDC *dc, MRBspline& curve, deque<PixeL>& pnts, int r, int g, int b)
+{
+	int	count, i, j, k, M, N, x, y, y1, y2, z;
+
+	vector D_x[MAX_MR_LEVEL];
+	vector D_y[MAX_MR_LEVEL];
+		
+	count = pnts.size();
+
+	if (count < 4) { // can't generate cubic B-spline. Just display the polyline
+		CPen pen;
+		pen.CreatePen(PS_SOLID, 3, RGB(r, g, b)); // Thickened for PRESENCE paper! (from 2 to 3)
+		CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+		//old[0] = free.x;
+		//old[1] = free.y;
+		dc->MoveTo(pnts[0].x, pnts[0].y);
+		for (i = 1; i < (signed)pnts.size(); i++) {
+			dc->LineTo(pnts[i].x, pnts[i].x);
+		}
+		dc->SelectObject(pOldPen);
+	}
+	else { // count >= 4
+		////////////////////////////////////////////////////////
+		// Let M be the given number of data points on the segment, where 2^j+3 <= M < 2^(j+1)+3
+		// Number of control points that should be sampled: N = 2^j+3
+		// Take out two end points => N-2 = 2^j+3-2 = 2^j+1 internal control points
+		// Let x be the number of control points sampled with interval 1
+		// Let y be the number of control points sampled with interval 2
+		// Two linear equations: x+2y = M-2; x+y = N-2; => y = M-N, x = N-2-y
+		// if M-N is an even number, sample (M-N)/2 points with interval 2 at both ends
+		// if M-N is an odd number, sample (int)((M-N)/2) points with interval 2 in the first end,
+		// and sample yy = (int)((M-N)/2) + 1 points with interval 2 in the last end.
+		M = count;
+		for (j=0; j < 10; j++) {
+			if (M < (int)pow(2, j+1) + 3) 
+				break; // j is the target level: N = 2^j+3
+		}
+		N = (int)pow(2, j) + 3;
+
+		TRACE("target_level(j) = %d\n", j);
+
+		y = M - N;
+		x = N - 2 - y;
+		y1 = y / 2;
+		if (even(y)) y2 = y1; // y is even number
+		else	y2 = y1 + 1; // y is odd number
+
+		vector cnt_x(N);
+		vector cnt_y(N);
+		vector t_cnt_x;
+		vector t_cnt_y;
+	
+		// Get control points
+		i = k = z = 0; // i: local counter, k: global counter, z: data point index counter
+		cnt_x[k] = (double)pnts[0].x; 
+		cnt_y[k] = (double)pnts[0].y;
+		k++;
+		// First y1 samples
+		for (i = 1, z = 0; i <= y1; i++) {
+			z += 2;
+			cnt_x[k] = (double)pnts[z].x;	
+			cnt_y[k] = (double)pnts[z].y;
+			k++;
+		}
+		// Middle x samples
+		for (i = 1; i <= x; i++) {
+			z += 1;
+			cnt_x[k] = (double)pnts[z].x;	
+			cnt_y[k] = (double)pnts[z].y;
+			k++;
+		}
+		// Final y2 samples
+		for (i = 1; i <= y2; i++) {
+			z += 1;
+			cnt_x[k] = (double)pnts[z].x;	
+			cnt_y[k] = (double)pnts[z].y;
+			k++;
+			z += 1;
+		}
+		// final control point
+		z++;
+		cnt_x[k] = (double)pnts[z].x;	
+		cnt_y[k] = (double)pnts[z].y;
+
+		//matrix tmp;
+
+		for (i = 1; i <= j; i++) {
+			//TRACE("Level %d\n", i);
+			//MatMatMult(A[i], Q[i], tmp);
+			//tmp.print();
+			//MatMatMult(B[i], P[i], tmp);
+			//MatMatMult(A[i], P[i], tmp);
+			//tmp.print();
+			//A[i].print();
+		}
+			
+
+		for (i = j; i >= 1; i--) {
+			//tmp = A[j-i] * cnt_x;
+			//A[j-i] * cnt_x;
+			//MatVecMultOverwrite(A[i], cnt_x); // cnt_x is overwritten
+			//cnt_x.print();
+			//MatVecMultOverwrite(A[i], cnt_y); // cnt_y is overwritten
+			//tmp.print();
+			//cnt_x.copy(A[j-i] * cnt_x); 
+			//cnt_y = A[j-i] * cnt_y; 
+			MatVecMult(A[i], cnt_x, t_cnt_x);
+			MatVecMult(A[i], cnt_y, t_cnt_y);
+			MatVecMult(B[i], cnt_x, D_x[i-1]); 
+			MatVecMult(B[i], cnt_y, D_y[i-1]); 
+			cnt_x.copy(t_cnt_x);
+			cnt_y.copy(t_cnt_y);
+
+			////////////////////////////////////////////////////
+			// Make the two endpoints to match the original points
+			/*
+			cnt_x[0] = (double)pnts[0].x;	
+			cnt_y[0] = (double)pnts[0].y;	
+			cnt_x[cnt_x.getMax()-1] = (double)pnts[pnts.size()-1].x;	
+			cnt_y[cnt_y.getMax()-1] = (double)pnts[pnts.size()-1].y;	
+			TRACE("Level %d\n", i-1);
+			TRACE("cnt_x.getMax() = %d\n", cnt_x.getMax());
+			TRACE("cnt_y.getMax() = %d\n", cnt_y.getMax());
+			TRACE("pnts.size() = %d\n", pnts.size());
+			*/
+		}
+		
+		N = (int)pow(2, 0) + 3; // control points: 4
+		//else return; // do not need to draw anything
+		
+		/////////////////////////////////////////////////////////////////////////////////////
+		// Multiplying A with cnt_pnts changes the starting and ending point coordinates slightly
+		// So we force them to have the same coordinates as originals
+		/*
+		cnt_x[0] = (double)pnts[0].x;	
+		cnt_y[0] = (double)pnts[0].y;	
+		cnt_x[N-1] = (double)pnts[pnts.size()-1].x;	
+		cnt_y[N-1] = (double)pnts[pnts.size()-1].y;	
+		*/
+
+		vector knot(N+4); // n + 1 + K
+
+		// Knot definition
+		knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+		for (i = 4; i < N; i++)
+			knot[i] = (double)i - 3;
+		knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+				
+		curve.SetKnotVector(knot);
+		curve.SetCntPnts(cnt_x, cnt_y);
+		curve.SetCnt0Pnts(cnt_x, cnt_y);
+		curve.SetDiffPnts(j, D_x, D_y);
+		curve.SetMaxLevel(j);
+		//curve.DrawCurve(dc, r, g, b);
+		//curve.DrawCntPnts(dc, 0, 0, 0);
+	}
+}
+
+void WaveletTransform3(MRBspline& curve)
+// Assuming the curve class object already has polyline data
+{
+	int	count, i, j, k, M, N, x, y, y1, y2, z;
+
+	vector D_x[MAX_MR_LEVEL];
+	vector D_y[MAX_MR_LEVEL];
+		
+	count = curve.pnts.size();
+
+	if (count < 4) { // can't generate cubic B-spline. Just display the polyline
+		// do nothing
+	}
+	else { // count >= 4
+		////////////////////////////////////////////////////////
+		// Let M be the given number of data points on the segment, where 2^j+3 <= M < 2^(j+1)+3
+		// Number of control points that should be sampled: N = 2^j+3
+		// Take out two end points => N-2 = 2^j+3-2 = 2^j+1 internal control points
+		// Let x be the number of control points sampled with interval 1
+		// Let y be the number of control points sampled with interval 2
+		// Two linear equations: x+2y = M-2; x+y = N-2; => y = M-N, x = N-2-y
+		// if M-N is an even number, sample (M-N)/2 points with interval 2 at both ends
+		// if M-N is an odd number, sample (int)((M-N)/2) points with interval 2 in the first end,
+		// and sample yy = (int)((M-N)/2) + 1 points with interval 2 in the last end.
+		M = count;
+		for (j=0; j < 10; j++) {
+			if (M < (int)pow(2, j+1) + 3) 
+				break; // j is the target level: N = 2^j+3
+		}
+		N = (int)pow(2, j) + 3;
+
+		TRACE("target_level(j) = %d\n", j);
+
+		y = M - N;
+		x = N - 2 - y;
+		y1 = y / 2;
+		if (even(y)) y2 = y1; // y is even number
+		else	y2 = y1 + 1; // y is odd number
+
+		vector cnt_x(N);
+		vector cnt_y(N);
+		vector t_cnt_x;
+		vector t_cnt_y;
+	
+		// Get control points
+		i = k = z = 0; // i: local counter, k: global counter, z: data point index counter
+		cnt_x[k] = (double)curve.pnts[0].x; 
+		cnt_y[k] = (double)curve.pnts[0].y;
+		k++;
+		// First y1 samples
+		for (i = 1, z = 0; i <= y1; i++) {
+			z += 2;
+			cnt_x[k] = (double)curve.pnts[z].x;	
+			cnt_y[k] = (double)curve.pnts[z].y;
+			k++;
+		}
+		// Middle x samples
+		for (i = 1; i <= x; i++) {
+			z += 1;
+			cnt_x[k] = (double)curve.pnts[z].x;	
+			cnt_y[k] = (double)curve.pnts[z].y;
+			k++;
+		}
+		// Final y2 samples
+		for (i = 1; i <= y2; i++) {
+			z += 1;
+			cnt_x[k] = (double)curve.pnts[z].x;	
+			cnt_y[k] = (double)curve.pnts[z].y;
+			k++;
+			z += 1;
+		}
+		// final control point
+		z++;
+		cnt_x[k] = (double)curve.pnts[z].x;	
+		cnt_y[k] = (double)curve.pnts[z].y;
+
+		//matrix tmp;
+
+		/*
+		for (i = 1; i <= j; i++) {
+			//TRACE("Level %d\n", i);
+			//MatMatMult(A[i], Q[i], tmp);
+			//tmp.print();
+			//MatMatMult(B[i], P[i], tmp);
+			//MatMatMult(A[i], P[i], tmp);
+			//tmp.print();
+			//A[i].print();
+		}
+		*/
+
+		////////////////////////////////////////
+		// save the highest level control points
+		curve.SetCntPnts(cnt_x, cnt_y);
+		////////////////////////////////////////
+
+		////////////////////////////////////////////
+		// 8/18/2005
+		// added for continuous curve demonstration!
+		curve.SetMRCntPnts(j, cnt_x, cnt_y);
+		/////////////////////////////////////////
+			
+		for (i = j; i >= 1; i--) {
+			//tmp = A[j-i] * cnt_x;
+			//A[j-i] * cnt_x;
+			//MatVecMultOverwrite(A[i], cnt_x); // cnt_x is overwritten
+			//cnt_x.print();
+			//MatVecMultOverwrite(A[i], cnt_y); // cnt_y is overwritten
+			//tmp.print();
+			//cnt_x.copy(A[j-i] * cnt_x); 
+			//cnt_y = A[j-i] * cnt_y; 
+			MatVecMult(A[i], cnt_x, t_cnt_x);
+			MatVecMult(A[i], cnt_y, t_cnt_y);
+			MatVecMult(B[i], cnt_x, D_x[i-1]); 
+			MatVecMult(B[i], cnt_y, D_y[i-1]); 
+			cnt_x.copy(t_cnt_x);
+			cnt_y.copy(t_cnt_y);
+			
+			/////////////////////////////////////////////
+			curve.SetMRCntPnts(i-1, cnt_x, cnt_y);
+			////////////////////////////////////////////
+
+			////////////////////////////////////////////////////
+			// Make the two endpoints to match the original points
+			/*
+			cnt_x[0] = (double)curve.pnts[0].x;	
+			cnt_y[0] = (double)curve.pnts[0].y;	
+			cnt_x[cnt_x.getMax()-1] = (double)curve.pnts[curve.pnts.size()-1].x;	
+			cnt_y[cnt_y.getMax()-1] = (double)curve.pnts[curve.pnts.size()-1].y;	
+			TRACE("Level %d\n", i-1);
+			TRACE("cnt_x.getMax() = %d\n", cnt_x.getMax());
+			TRACE("cnt_y.getMax() = %d\n", cnt_y.getMax());
+			TRACE("curve.pnts.size() = %d\n", curve.pnts.size());
+			*/
+		}
+		
+		//////////////////////////////////////////////////
+		N = (int)pow(2, j) + 3; // control points # in highest level
+		//N = (int)pow(2, 0) + 3; // control points: 4
+		//else return; // do not need to draw anything
+		
+		/////////////////////////////////////////////////////////////////////////////////////
+		// Multiplying A with cnt_curve.pnts changes the starting and ending point coordinates slightly
+		// So we force them to have the same coordinates as originals
+		/*
+		cnt_x[0] = (double)curve.pnts[0].x;	
+		cnt_y[0] = (double)curve.pnts[0].y;	
+		cnt_x[N-1] = (double)curve.pnts[curve.pnts.size()-1].x;	
+		cnt_y[N-1] = (double)curve.pnts[curve.pnts.size()-1].y;	
+		*/
+
+		vector knot(N+4); // n + 1 + K
+
+		// Knot definition
+		knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+		for (i = 4; i < N; i++)
+			knot[i] = (double)i - 3;
+		knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+				
+		curve.SetKnotVector(knot);
+		//curve.SetCntPnts(cnt_x, cnt_y);
+		curve.SetCnt0Pnts(cnt_x, cnt_y);
+		curve.SetDiffPnts(j, D_x, D_y);
+		curve.SetMaxLevel(j);
+		curve.SetCurLevel(j);
+		//curve.DrawCurve(dc, r, g, b);
+		//curve.DrawCntPnts(dc, 0, 0, 0);
+	}
+}
+
+void CopyEditedCurve(int j, MRBspline& tmp_curve, MRBspline& curve)
+{
+	int	i;
+
+	vector* D_x;
+	vector* D_y;
+	D_x = new vector[j];
+	D_y = new vector[j];
+	
+	vector cnt_x;
+	vector cnt_y;
+	vector t_cnt_x;
+	vector t_cnt_y;
+
+	TRACE("Copy Edited Curve\n");
+	TRACE("j = %d\n", j);
+
+	cnt_x.copy(tmp_curve.GetCntPnts_x());
+	cnt_y.copy(tmp_curve.GetCntPnts_y());
+	
+	for (i = j; i >= 1; i--) {
+		MatVecMult(A[i], cnt_x, t_cnt_x);
+		MatVecMult(A[i], cnt_y, t_cnt_y);
+		MatVecMult(B[i], cnt_x, D_x[i-1]); 
+		MatVecMult(B[i], cnt_y, D_y[i-1]); 
+		cnt_x.copy(t_cnt_x);
+		cnt_y.copy(t_cnt_y);
+		//D_x[i-1].print();
+	}
+
+	/*
+	N = (int)pow(2, 0) + 3; // control points: 4
+	//else return; // do not need to draw anything
+	
+	vector knot(N+4); // n + 1 + K
+
+	// Knot definition
+	knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+	for (i = 4; i < N; i++)
+		knot[i] = (double)i - 3;
+	knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+	*/
+			
+	//curve.SetKnotVector(knot);
+	curve.SetCntPnts(cnt_x, cnt_y);
+	curve.SetCnt0Pnts(cnt_x, cnt_y);
+	curve.SetEditedDiffPnts(j, D_x, D_y);
+	//curve.SetDiffPnts(j, D_x, D_y);
+	//curve.SetLevel(j); // set maximum level
+	//curve.DrawCurve(dc, r, g, b);
+	//curve.DrawCntPnts(dc, 0, 0, 0);
+	delete [] D_x;
+	delete [] D_y;
+}
+
+void UpdateEditedCurve(MRBspline& curve)
+{
+	int	i;
+
+	int j = curve.GetCurLevel();
+
+	vector* D_x;
+	vector* D_y;
+	D_x = new vector[j];
+	D_y = new vector[j];
+	
+	vector cnt_x;
+	vector cnt_y;
+	vector t_cnt_x;
+	vector t_cnt_y;
+
+	TRACE("UpdateEditedCurve\n");
+	TRACE("CurLevel = %d\n", j);
+
+	cnt_x.copy(curve.GetCntPnts_x());
+	cnt_y.copy(curve.GetCntPnts_y());
+	
+	for (i = j; i >= 1; i--) {
+		TRACE("FOR loop\n");
+		TRACE("cnt_x[0] = %.1f\n", cnt_x[0]);
+		TRACE("cnt_y[0] = %.1f\n", cnt_y[0]);
+		MatVecMult(A[i], cnt_x, t_cnt_x);
+		MatVecMult(A[i], cnt_y, t_cnt_y);
+		MatVecMult(B[i], cnt_x, D_x[i-1]); 
+		MatVecMult(B[i], cnt_y, D_y[i-1]); 
+		cnt_x.copy(t_cnt_x);
+		cnt_y.copy(t_cnt_y);
+		//D_x[i-1].print();
+	}
+
+	/*
+	N = (int)pow(2, 0) + 3; // control points: 4
+	//else return; // do not need to draw anything
+	
+	vector knot(N+4); // n + 1 + K
+
+	// Knot definition
+	knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+	for (i = 4; i < N; i++)
+		knot[i] = (double)i - 3;
+	knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+	*/
+			
+	//curve.SetKnotVector(knot);
+	//curve.SetCntPnts(cnt_x, cnt_y);
+	curve.SetCnt0Pnts(cnt_x, cnt_y);
+	curve.SetEditedDiffPnts(j, D_x, D_y);
+	//curve.SetDiffPnts(j, D_x, D_y);
+	//curve.SetLevel(j); // set maximum level
+	//curve.DrawCurve(dc, r, g, b);
+	//curve.DrawCntPnts(dc, 0, 0, 0);
+	delete [] D_x;
+	delete [] D_y;
+}
+
+void UpdateEditedCurve2(MRBspline& curve)
+{
+	int i;
+
+	int j = curve.GetCurLevel();
+
+	vector* D_x;
+	vector* D_y;
+	D_x = new vector[j];
+	D_y = new vector[j];
+	vector D_x1;
+	vector D_y1;
+	vector t_D_x;
+	vector t_D_y;
+	
+	vector cnt_x;
+	vector cnt_y;
+	vector t_cnt_x;
+	vector t_cnt_y;
+
+	TRACE("UpdateEditedCurve2\n");
+	TRACE("CurLevel = %d\n", j);
+
+	cnt_x.copy(curve.GetCntPnts_x());
+	cnt_y.copy(curve.GetCntPnts_y());
+
+	////////////////////////////////////
+	curve.SetMRCntPnts(j, cnt_x, cnt_y);
+	/////////////////////////////////////
+	
+	//matrix a(N, N);
+	//matrix inv(N, N);
+	matrix At, AA, AA_in, A_in, tmp;
+
+	//cnt_x.print();
+	//cnt_y.print();
+
+	for (i = j; i >= 1; i--) {
+		//TRACE("FOR loop\n");
+		//TRACE("cnt_x[0] = %.1f\n", cnt_x[0]);
+		//TRACE("cnt_y[0] = %.1f\n", cnt_y[0]);
+		MatVecMult(A[i], cnt_x, t_cnt_x);
+		MatVecMult(A[i], cnt_y, t_cnt_y);
+		MatVecMult(B[i], cnt_x, D_x[i-1]); 
+		MatVecMult(B[i], cnt_y, D_y[i-1]); 
+		cnt_x.copy(t_cnt_x);
+		cnt_y.copy(t_cnt_y);
+
+		curve.SetMRCntPnts(i-1, cnt_x, cnt_y);
+		//D_x[i-1].print();
+	}
+
+	/*
+	N = (int)pow(2, 0) + 3; // control points: 4
+	//else return; // do not need to draw anything
+	
+	vector knot(N+4); // n + 1 + K
+
+	// Knot definition
+	knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+	for (i = 4; i < N; i++)
+		knot[i] = (double)i - 3;
+	knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+	*/
+			
+	//curve.SetKnotVector(knot);
+	//curve.SetCntPnts(cnt_x, cnt_y);
+	curve.SetCnt0Pnts(cnt_x, cnt_y);
+	curve.SetEditedDiffPnts(j, D_x, D_y);
+	//curve.SetDiffPnts(j, D_x, D_y);
+	//curve.SetLevel(j); // set maximum level
+	//curve.DrawCurve(dc, r, g, b);
+	//curve.DrawCntPnts(dc, 0, 0, 0);
+	delete [] D_x;
+	delete [] D_y;
+}
+
+void UpdateEditedCurve3(MRBspline& curve)
+// Do not touch other level curves
+{
+	int j = curve.GetCurLevel();
+
+	vector cnt_x;
+	vector cnt_y;
+	vector t_cnt_x;
+	vector t_cnt_y;
+
+	TRACE("UpdateEditedCurve3\n");
+	TRACE("CurLevel = %d\n", j);
+
+	cnt_x.copy(curve.GetCntPnts_x());
+	cnt_y.copy(curve.GetCntPnts_y());
+
+	////////////////////////////////////
+	curve.SetMRCntPnts(j, cnt_x, cnt_y);
+	/////////////////////////////////////
+	
+}
+
+int DrawFilteredMRCurveMemDC(CDC *dc, MRBspline& curve, int cur_level, int r, int g, int b)
+{
+	int	i, j, N;
+	int level_flag = 0;
+
+	if (cur_level < 0) {
+		cur_level = 0;
+		level_flag = 1; // out of bounds
+	}
+	//CPen pen;
+	//pen.CreatePen(PS_SOLID, 3, RGB(r, g, b)); // Thickened for PRESENCE paper! (from 2 to 3)
+	//CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+	//count = 1;
+	//else { // count >= 4
+	////////////////////////////////////////////////////////
+	// Let M be the given number of data points on the segment, where 2^j+3 <= M < 2^(j+1)+3
+	// Number of control points that should be sampled: N = 2^j+3
+	// Take out two end points => N-2 = 2^j+3-2 = 2^j+1 internal control points
+	// Let x be the number of control points sampled with interval 1
+	// Let y be the number of control points sampled with interval 2
+	// Two linear equations: x+2y = M-2; x+y = N-2; => y = M-N, x = N-2-y
+	// if M-N is an even number, sample (M-N)/2 points with interval 2 at both ends
+	// if M-N is an odd number, sample (int)((M-N)/2) points with interval 2 in the first end,
+	// and sample yy = (int)((M-N)/2) + 1 points with interval 2 in the last end.
+	j = curve.GetMaxLevel(); // Maximum level of the current curve
+	//N = (int)pow(2, j) + 3;
+
+	TRACE("j = %d\n", j);
+	//TRACE("level_down = %d\n", level_down);
+	
+	if (cur_level > j) { 
+		cur_level = j; // shouldn't allow lower higher than 0
+		level_flag = 1;
+	}
+	//old_cnt_x.copy(curve.cnt_x);
+
+	vector cnt_x;
+	vector cnt_y;
+	vector t_cnt_x;
+	vector t_cnt_y;
+	vector D_x;
+	vector D_y;
+	vector t_D_x;
+	vector t_D_y;
+
+	cnt_x.copy(curve.GetCnt0Pnts_x());
+	cnt_y.copy(curve.GetCnt0Pnts_y());
+
+	N = (int)pow(2, 0) + 3; // Assume the level is 0
+	curve.SetCurLevel(0);
+
+	for (i = 0; i < cur_level; i++) {
+		MatVecMult(P[i+1], cnt_x, t_cnt_x);
+		MatVecMult(P[i+1], cnt_y, t_cnt_y);
+		D_x.copy(curve.GetDiffPnts_x(i));
+		D_y.copy(curve.GetDiffPnts_y(i));
+		MatVecMult(Q[i+1], D_x, t_D_x);
+		MatVecMult(Q[i+1], D_y, t_D_y);
+		VecVecAdd(t_cnt_x, t_D_x, cnt_x);
+		VecVecAdd(t_cnt_y, t_D_y, cnt_y);
+		N = (int)pow(2, i+1) + 3;
+		curve.SetCurLevel(i+1); // set current level
+	}
+	
+	//else return; // do not need to draw anything
+	
+	vector knot(N+4); // n + 1 + K
+
+	// Knot definition
+	knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+	for (i = 4; i < N; i++)
+		knot[i] = (double)i - 3;
+	knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+			
+	curve.SetKnotVector(knot);
+	curve.SetCntPnts(cnt_x, cnt_y);
+	curve.DrawCurve(dc, r, g, b);
+	curve.DrawCntPnts(dc, 0, 0, 0);
+	//}
+	return level_flag; // returns 1 if cur_level is out of bounds
+}
+
+void CurveSmoothing(MRBspline& curve)
+{
+	int	i, j, N;
+	int level_flag = 0;
+
+	int cur_level = curve.cur_level;
+
+	if (cur_level < 0) {
+		curve.cur_level = 0;
+		return;
+	}
+
+	j = curve.GetMaxLevel(); // Maximum level of the current curve
+	//N = (int)pow(2, j) + 3;
+
+	TRACE("j = %d\n", j);
+	//TRACE("level_down = %d\n", level_down);
+	
+	if (cur_level > j) { 
+		curve.cur_level = j; // shouldn't allow higher than 0
+		return;
+	}
+	//old_cnt_x.copy(curve.cnt_x);
+
+	vector cnt_x;
+	vector cnt_y;
+	vector t_cnt_x;
+	vector t_cnt_y;
+	vector D_x;
+	vector D_y;
+	vector t_D_x;
+	vector t_D_y;
+
+	cnt_x.copy(curve.GetCnt0Pnts_x());
+	cnt_y.copy(curve.GetCnt0Pnts_y());
+
+	N = (int)pow(2, 0) + 3; // Assume the level is 0
+	curve.SetCurLevel(0);
+
+	for (i = 0; i < cur_level; i++) {
+		MatVecMult(P[i+1], cnt_x, t_cnt_x);
+		MatVecMult(P[i+1], cnt_y, t_cnt_y);
+		D_x.copy(curve.GetDiffPnts_x(i));
+		D_y.copy(curve.GetDiffPnts_y(i));
+		MatVecMult(Q[i+1], D_x, t_D_x);
+		MatVecMult(Q[i+1], D_y, t_D_y);
+		VecVecAdd(t_cnt_x, t_D_x, cnt_x);
+		VecVecAdd(t_cnt_y, t_D_y, cnt_y);
+		N = (int)pow(2, i+1) + 3;
+		curve.SetCurLevel(i+1); // set current level
+	}
+	
+	//else return; // do not need to draw anything
+	
+	vector knot(N+4); // n + 1 + K
+
+	// Knot definition
+	knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+	for (i = 4; i < N; i++)
+		knot[i] = (double)i - 3;
+	knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+			
+	curve.SetKnotVector(knot);
+	curve.SetCntPnts(cnt_x, cnt_y);
+	//curve.DrawCurve(dc, r, g, b);
+	//curve.DrawCntPnts(dc, 0, 0, 0);
+	//}
+}
+
+
+int DrawMRcurveMemDC(CDC *dc, MRBspline& curve, int level_down, deque<PixeL>& pnts, int r, int g, int b)
+{
+	int	count, i, j, k, M, N, x, y, y1, y2, z;
+	int level_down_flag = 0;
+		
+	if (level_down < 0) {
+		level_down = 0;
+		level_down_flag = 1;
+	}
+	//CPen pen;
+	//pen.CreatePen(PS_SOLID, 3, RGB(r, g, b)); // Thickened for PRESENCE paper! (from 2 to 3)
+	//CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+	//count = 1;
+	count = pnts.size();
+	/*
+	old[0] = free.x;
+	old[1] = free.y;
+	// Save starting point
+	st_x = old[0];
+	st_y = old[1];
+	while(1) {
+		vert[0] = next_pxl[old[0]][old[1]][0];
+		vert[1] = next_pxl[old[0]][old[1]][1];
+		old[0] = vert[0];
+		old[1] = vert[1];
+		count++;
+		if (vert[0] == seed.x && vert[1] == seed.y) break;
+	}
+	// Save ending point
+	end_x = vert[0];
+	end_y = vert[1];
+	*/
+
+	if (count < 4) { // can't generate cubic B-spline. Just display the polyline
+		CPen pen;
+		pen.CreatePen(PS_SOLID, 3, RGB(r, g, b)); // Thickened for PRESENCE paper! (from 2 to 3)
+		CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+		//old[0] = free.x;
+		//old[1] = free.y;
+		dc->MoveTo(pnts[0].x, pnts[0].y);
+		for (i = 1; i < (signed)pnts.size(); i++) {
+			dc->LineTo(pnts[i].x, pnts[i].x);
+		}
+		dc->SelectObject(pOldPen);
+	}
+	else { // count >= 4
+		////////////////////////////////////////////////////////
+		// Let M be the given number of data points on the segment, where 2^j+3 <= M < 2^(j+1)+3
+		// Number of control points that should be sampled: N = 2^j+3
+		// Take out two end points => N-2 = 2^j+3-2 = 2^j+1 internal control points
+		// Let x be the number of control points sampled with interval 1
+		// Let y be the number of control points sampled with interval 2
+		// Two linear equations: x+2y = M-2; x+y = N-2; => y = M-N, x = N-2-y
+		// if M-N is an even number, sample (M-N)/2 points with interval 2 at both ends
+		// if M-N is an odd number, sample (int)((M-N)/2) points with interval 2 in the first end,
+		// and sample yy = (int)((M-N)/2) + 1 points with interval 2 in the last end.
+		M = count;
+		for (j=0; j < 10; j++) {
+			if (M < (int)pow(2, j+1) + 3) 
+				break; // j is the target level: N = 2^j+3
+		}
+		N = (int)pow(2, j) + 3;
+		y = M - N;
+		x = N - 2 - y;
+		y1 = y / 2;
+		if (even(y)) y2 = y1; // y is even number
+		else	y2 = y1 + 1; // y is odd number
+
+		vector cnt_x(N);
+		vector cnt_y(N);
+	
+		// Get control points
+		i = k = z = 0; // i: local counter, k: global counter, z: data point index counter
+		//old[0] = free.x;
+		//old[1] = free.y;
+		//cnt_x[k] = (double)free.x; 
+		//cnt_y[k] = (double)IMAGE_Y-1-free.y;
+		cnt_x[k] = (double)pnts[0].x; 
+		cnt_y[k] = (double)pnts[0].y;
+		k++;
+		// First y1 samples
+		for (i = 1, z = 0; i <= y1; i++) {
+			z += 2;
+			//cnt_x[k] = (double)vert[0];	
+			//cnt_y[k] = (double)IMAGE_Y-1-vert[1];
+			cnt_x[k] = (double)pnts[z].x;	
+			cnt_y[k] = (double)pnts[z].y;
+			k++;
+		}
+		// Middle x samples
+		for (i = 1; i <= x; i++) {
+			z += 1;
+			cnt_x[k] = (double)pnts[z].x;	
+			cnt_y[k] = (double)pnts[z].y;
+			k++;
+		}
+		// Final y2 samples
+		for (i = 1; i <= y2; i++) {
+			z += 1;
+			cnt_x[k] = (double)pnts[z].x;	
+			cnt_y[k] = (double)pnts[z].y;
+			k++;
+			z += 1;
+		}
+		// final control point
+		z++;
+		cnt_x[k] = (double)pnts[z].x;	
+		cnt_y[k] = (double)pnts[z].y;
+
+		TRACE("j = %d, level_down = %d\n", j, level_down);
+		if (j - level_down < 0) { 
+			level_down = j; // shouldn't allow lower level than 0
+			level_down_flag = 1;
+		}
+
+		if (j - level_down >= 0) { 
+		// the final level should be at least 0 (because we have A, B matrices from level 1)
+			for (i = 0; i < level_down; i++) {
+				//tmp = A[j-i] * cnt_x;
+				//A[j-i] * cnt_x;
+				MatVecMultOverwrite(A[j-i], cnt_x);
+				//cnt_x.print();
+				MatVecMultOverwrite(A[j-i], cnt_y);
+				//tmp.print();
+				//cnt_x.copy(A[j-i] * cnt_x); 
+				//cnt_y = A[j-i] * cnt_y; 
+			}
+			N = (int)pow(2, j-level_down) + 3;
+		}	
+		//else return; // do not need to draw anything
+		
+		/////////////////////////////////////////////////////////////////////////////////////
+		// Multiplying A with cnt_pnts changes the starting and ending point coordinates slightly
+		// So we force them to have the same coordinates as originals
+		//cnt_x[0] = (double)pnts[0].x;	
+		//cnt_y[0] = (double)pnts[0].y;	
+		//cnt_x[N-1] = (double)pnts[pnts.size()-1].x;	
+		//cnt_y[N-1] = (double)pnts[pnts.size()-1].y;	
+
+		vector knot(N+4); // n + 1 + K
+
+		// Knot definition
+		knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+		for (i = 4; i < N; i++)
+			knot[i] = (double)i - 3;
+		knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+				
+		curve.SetKnotVector(knot);
+		curve.SetCntPnts(cnt_x, cnt_y);
+		curve.DrawCurve(dc, r, g, b);
+		curve.DrawCntPnts(dc, 0, 0, 0);
+	}
+	return level_down_flag; // returns 1 if level_down is out of bounds
+}
+
+
+void DrawBWireMRSampledEdgeMemDC(CDC *dc, MRBspline& curve, int level_down, PixeL free, PixeL seed, int r, int g, int b)
+{
+	int vert[2], old[2];
+	int	count, i, j, k, M, N, x, y, y1, y2;
+	int	st_x, st_y, end_x, end_y;
+	//PixeL tmp;
+	double2D tmp;
+	
+	//CPen pen;
+	//pen.CreatePen(PS_SOLID, 3, RGB(r, g, b)); // Thickened for PRESENCE paper! (from 2 to 3)
+	//CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+	count = 1;
+	old[0] = free.x;
+	old[1] = free.y;
+	// Save starting point
+	st_x = old[0];
+	st_y = old[1];
+	curve.pnts.clear();
+	tmp.x = old[0];
+	tmp.y = IMAGE_Y-1-old[1];
+	curve.pnts.insert(curve.pnts.end(), tmp); 
+	while(1) {
+		vert[0] = next_pxl[old[0]][old[1]][0];
+		vert[1] = next_pxl[old[0]][old[1]][1];
+		tmp.x = vert[0];
+		tmp.y = IMAGE_Y-1-vert[1];
+		curve.pnts.insert(curve.pnts.end(), tmp); 
+		old[0] = vert[0];
+		old[1] = vert[1];
+		count++;
+		if (vert[0] == seed.x && vert[1] == seed.y) break;
+	}
+	// Save ending point
+	end_x = vert[0];
+	end_y = vert[1];
+
+	curve.SetPolylineCount(count); 
+
+	if (count < 4) { // can't generate cubic B-spline. Just display the polyline
+		CPen pen;
+		pen.CreatePen(PS_SOLID, 3, RGB(r, g, b)); // Thickened for PRESENCE paper! (from 2 to 3)
+		CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+		old[0] = free.x;
+		old[1] = free.y;
+		while(1) {
+			vert[0] = next_pxl[old[0]][old[1]][0];
+			vert[1] = next_pxl[old[0]][old[1]][1];
+			dc->MoveTo(old[0], IMAGE_Y-1-old[1]);
+			dc->LineTo(vert[0], IMAGE_Y-1-vert[1]);
+			old[0] = vert[0];
+			old[1] = vert[1];
+			if (vert[0] == seed.x && vert[1] == seed.y) break;
+		}
+		dc->SelectObject(pOldPen);
+	}
+	else { // count >= 4
+		////////////////////////////////////////////////////////
+		// Let M be the given number of data points on the segment, where 2^j+3 <= M < 2^(j+1)+3
+		// Number of control points that should be sampled: N = 2^j+3
+		// Take out two end points => N-2 = 2^j+3-2 = 2^j+1 internal control points
+		// Let x be the number of control points sampled with interval 1
+		// Let y be the number of control points sampled with interval 2
+		// Two linear equations: x+2y = M-2; x+y = N-2; => y = M-N, x = N-2-y
+		// if M-N is an even number, sample (M-N)/2 points with interval 2 at both ends
+		// if M-N is an odd number, sample (int)((M-N)/2) points with interval 2 in the first end,
+		// and sample yy = (int)((M-N)/2) + 1 points with interval 2 in the last end.
+		M = count;
+		for (j=0; j < 10; j++) {
+			if (M < (int)pow(2, j+1) + 3) 
+				break; // j is the target level: N = 2^j+3
+		}
+		N = (int)pow(2, j) + 3;
+		y = M - N;
+		x = N - 2 - y;
+		y1 = y / 2;
+		if (even(y)) y2 = y1; // y is even number
+		else	y2 = y1 + 1; // y is odd number
+
+		vector cnt_x(N);
+		vector cnt_y(N);
+		
+		// Get control points
+		i = k = 0; // i: local counter, k: global counter
+		old[0] = free.x;
+		old[1] = free.y;
+		cnt_x[k] = (double)free.x; cnt_y[k] = (double)IMAGE_Y-1-free.y;
+		k++;
+		// First y1 samples
+		for (i = 1; i <= y1; i++) {
+			vert[0] = next_pxl[old[0]][old[1]][0];
+			vert[1] = next_pxl[old[0]][old[1]][1];
+			old[0] = vert[0];
+			old[1] = vert[1];
+			vert[0] = next_pxl[old[0]][old[1]][0];
+			vert[1] = next_pxl[old[0]][old[1]][1];
+			cnt_x[k] = (double)vert[0];	cnt_y[k] = (double)IMAGE_Y-1-vert[1];
+			k++;
+			old[0] = vert[0];
+			old[1] = vert[1];
+		}
+		// Middle x samples
+		for (i = 1; i <= x; i++) {
+			vert[0] = next_pxl[old[0]][old[1]][0];
+			vert[1] = next_pxl[old[0]][old[1]][1];
+			cnt_x[k] = (double)vert[0];	cnt_y[k] = (double)IMAGE_Y-1-vert[1];
+			k++;
+			old[0] = vert[0];
+			old[1] = vert[1];
+		}
+		// Final y2 samples
+		for (i = 1; i <= y2; i++) {
+			vert[0] = next_pxl[old[0]][old[1]][0];
+			vert[1] = next_pxl[old[0]][old[1]][1];
+			cnt_x[k] = (double)vert[0];	cnt_y[k] = (double)IMAGE_Y-1-vert[1];
+			k++;
+			old[0] = vert[0];
+			old[1] = vert[1];
+			vert[0] = next_pxl[old[0]][old[1]][0];
+			vert[1] = next_pxl[old[0]][old[1]][1];
+			old[0] = vert[0];
+			old[1] = vert[1];
+		}
+		// final control point
+		vert[0] = next_pxl[old[0]][old[1]][0];
+		vert[1] = next_pxl[old[0]][old[1]][1];
+		cnt_x[k] = (double)vert[0];	cnt_y[k] = (double)IMAGE_Y-1-vert[1];
+
+		if (j - level_down < 0) level_down = j;
+		if (j - level_down >= 0) { 
+		// the final level should be at least 0 (because we have A, B matrices from level 1)
+			for (i = 0; i < level_down; i++) {
+				//tmp = A[j-i] * cnt_x;
+				//A[j-i] * cnt_x;
+				MatVecMultOverwrite(A[j-i], cnt_x);
+				//cnt_x.print();
+				MatVecMultOverwrite(A[j-i], cnt_y);
+				//tmp.print();
+				//cnt_x.copy(A[j-i] * cnt_x); 
+				//cnt_y = A[j-i] * cnt_y; 
+			}
+			N = (int)pow(2, j-level_down) + 3;
+		}	
+		
+		/////////////////////////////////////////////////////////////////////////////////////
+		// Multiplying A with cnt_pnts changes the starting and ending point coordinates slightly
+		// So we force them to have the same coordinates as originals
+		cnt_x[0] = (double)st_x;	cnt_y[0] = (double)IMAGE_Y-1-st_y;
+		cnt_x[N-1] = (double)end_x;	cnt_y[N-1] = (double)IMAGE_Y-1-end_y;
+
+		vector knot(N+4); // n + 1 + K
+
+		// Knot definition
+		knot[0] = knot[1] = knot[2] = knot[3] = 0.0;
+		for (i = 4; i < N; i++)
+			knot[i] = (double)i - 3;
+		knot[N] = knot[N+1] = knot[N+2] = knot[N+3] = (double)N - 3;
+				
+		curve.SetKnotVector(knot);
+		curve.SetCntPnts(cnt_x, cnt_y);
+		curve.DrawCurve(dc, r, g, b);
+	}
+}
+
+////////////////////////////////////////////////////////////////
+
+void DrawSeedsMemDC(CDC *dc, int sc, int r, int g, int b)
+{
+	int k;
+
+	for (k = 0; k < sc; k++) {
+		DrawPointMemDC(dc, seeds[k].x, IMAGE_Y-1-seeds[k].y, FIS_POINT_SIZE, r, g, b);
+	}
+}
+
+void DrawBoxMemDC(CDC *dc, int size, int x, int y, int r, int g, int b)
+{
+	long 	vert[4][2];
+	int	half_x, half_y;
+
+	half_x = half_y = size/2;
+
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, 2, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	vert[0][0] = x - half_x;
+	vert[0][1] = y - half_y;
+	vert[1][0] = x + half_x;
+	vert[1][1] = y - half_y;
+	vert[2][0] = x + half_x;
+	vert[2][1] = y + half_y;
+	vert[3][0] = x - half_x;
+	vert[3][1] = y + half_y;
+
+	dc->MoveTo(vert[0][0], vert[0][1]);
+	dc->LineTo(vert[1][0], vert[1][1]);
+	dc->LineTo(vert[2][0], vert[2][1]);
+	dc->LineTo(vert[3][0], vert[3][1]);
+	dc->LineTo(vert[0][0], vert[0][1]);
+
+	dc->SelectObject(pOldPen);
+
+
+}
+
+
+void DrawEdgeDC(CClientDC *dc, PixeL free, PixeL seed, int r, int g, int b)
+{
+	short redvec[3] = {255, 0, 0}; 
+	int 	vert[2], old[2];
+
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, 2, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	old[0] = free.x;
+	old[1] = free.y;
+	while(1) {
+		vert[0] = next_pxl[old[0]][old[1]][0];
+		vert[1] = next_pxl[old[0]][old[1]][1];
+		dc->MoveTo(old[0], IMAGE_Y-1-old[1]);
+		dc->LineTo(vert[0], IMAGE_Y-1-vert[1]);
+		old[0] = vert[0];
+		old[1] = vert[1];
+		if (vert[0] == seed.x && vert[1] == seed.y) break;
+	}
+
+	dc->SelectObject(pOldPen);
+}
+
+/*
+void DrawCumulativeMotifEdge(PixeL free, PixeL seed, Image image)
+{
+	short redvec[3] = {255, 0, 0}; 
+	long 	vert[2];
+	long 	old[2];
+
+	old[0] = seed.x;
+	old[1] = seed.y;
+	image[old[0]][old[1]] = 1;
+	while(1) {
+		vert[0] = cumulative_next_pxl[old[0]][old[1]][0];
+		vert[1] = cumulative_next_pxl[old[0]][old[1]][1];
+		image[vert[0]][vert[1]] = 1;
+		old[0] = vert[0];
+		old[1] = vert[1];
+		if (vert[0] == free.x && vert[1] == free.y) break;
+	}
+
+}
+*/
+
+void DrawCumulativeEdgeDC(CClientDC *dc, PixeL free, PixeL seed, int r, int g, int b)
+{
+	short redvec[3] = {255, 0, 0}; 
+	long 	vert[2];
+	long 	old[2];
+
+	//glColor4f(1.0, 0.0, 0.0, 1.0);
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, 2, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	old[0] = seed.x;
+	old[1] = seed.y;
+	while(1) {
+		vert[0] = cumulative_next_pxl[old[0]][old[1]][0];
+		vert[1] = cumulative_next_pxl[old[0]][old[1]][1];
+		dc->MoveTo(old[0], IMAGE_Y-1-old[1]);
+		dc->LineTo(vert[0], IMAGE_Y-1-vert[1]);
+		old[0] = vert[0];
+		old[1] = vert[1];
+		if (vert[0] == free.x && vert[1] == free.y) break;
+	}
+
+	dc->SelectObject(pOldPen);
+}
+
+void DrawBoxDC(CClientDC *dc, int size, int x, int y, int r, int g, int b)
+{
+	long 	vert[4][2];
+	int	half_x, half_y;
+
+	half_x = half_y = size/2;
+
+	CPen pen;
+		
+	pen.CreatePen(PS_SOLID, 2, RGB(r, g, b));
+	CPen *pOldPen = (CPen *)dc->SelectObject(&pen);
+
+	vert[0][0] = x - half_x;
+	vert[0][1] = y - half_y;
+	vert[1][0] = x + half_x;
+	vert[1][1] = y - half_y;
+	vert[2][0] = x + half_x;
+	vert[2][1] = y + half_y;
+	vert[3][0] = x - half_x;
+	vert[3][1] = y + half_y;
+
+	dc->MoveTo(vert[0][0], vert[0][1]);
+	dc->LineTo(vert[1][0], vert[1][1]);
+	dc->LineTo(vert[2][0], vert[2][1]);
+	dc->LineTo(vert[3][0], vert[3][1]);
+	dc->LineTo(vert[0][0], vert[0][1]);
+
+	dc->SelectObject(pOldPen);
+
+}
+
+
+void DrawBox(int size, PixeL free, int col)
+{
+	long 	vert[4][2];
+	int	half_x, half_y;
+
+	glColor4f(1.0, 0.0, 0.0, 1.0);
+
+	half_x = half_y = size/2;
+
+	glLineWidth(2.0);
+
+	vert[0][0] = free.x - half_x;
+	vert[0][1] = free.y - half_y;
+	vert[1][0] = free.x + half_x;
+	vert[1][1] = free.y - half_y;
+	vert[2][0] = free.x + half_x;
+	vert[2][1] = free.y + half_y;
+	vert[3][0] = free.x - half_x;
+	vert[3][1] = free.y + half_y;
+
+		glBegin(GL_LINES);
+			glVertex2i(vert[0][0], vert[0][1]);
+			glVertex2i(vert[1][0], vert[1][1]);
+			glVertex2i(vert[2][0], vert[2][1]);
+			glVertex2i(vert[3][0], vert[3][1]);
+			glVertex2i(vert[0][0], vert[0][1]);
+		glEnd();
+}
+
+////////////////////////////////////////////////////////
+/////////// EL main routines
+
+void MasktoNodes(int width, int height, int size, PixeL seed, Image& image, int max_grad, Image& gradient, Image& laplacian, 
+		Nodes& item)
+// this is for EL 
+{
+   int   i, j;
+   int	x, y;
+   int	half_x, half_y;
+
+	half_x = half_y = size/2;	
+
+	ClearMinHeap();
+
+   for (i = 0; i < size; i++)
+      for (j = 0; j < size; j++) {
+
+			/* item[i][j] = (Node *)malloc(sizeof(Node)); */
+
+      	x = seed.x - half_x + i;	y = seed.y - half_y + j;
+
+      	item[i][j].no_in_heap = 0;	/* not in the heap yet */
+
+         if (i == 0 || i == size-1 || j == 0 || j == size-1 || 
+         		x <= 0 || x >= width-1 || y <= 0 || y >= height-1) 
+            item[i][j].expanded = TRUE_;
+         else 
+         	item[i][j].expanded = FALSE_;
+
+      	if (x < 0)	x = 0;	if (x > width-1)	x = width - 1;
+      	if (y < 0)	y = 0;	if (y > height-1)	y = height - 1;
+
+				/* loc is the relative position in the mask */
+         item[i][j].loc.x = i;   item[i][j].loc.y = j;
+				/* coord is the absolute position in the image */
+         item[i][j].coord.x = x;  item[i][j].coord.y = y;
+         item[i][j].next.x = i;  item[i][j].next.y = j;
+
+         item[i][j].cost = MAX_COST;
+         item[i][j].gradient = 
+					1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+         //item[i][j].laplacian = (double)laplacian[x][y];
+
+         item[i][j].N[1].x = i-1;
+         item[i][j].N[1].y = j-1;
+         item[i][j].N[2].x = i;
+         item[i][j].N[2].y = j-1;
+         item[i][j].N[3].x = i+1;
+         item[i][j].N[3].y = j-1;
+         item[i][j].N[4].x = i-1;
+         item[i][j].N[4].y = j;
+         item[i][j].N[5].x = i+1;
+         item[i][j].N[5].y = j;
+         item[i][j].N[6].x = i-1;
+         item[i][j].N[6].y = j+1;
+         item[i][j].N[7].x = i;
+         item[i][j].N[7].y = j+1;
+         item[i][j].N[8].x = i+1;
+         item[i][j].N[8].y = j+1;
+
+         item[i][j].intensity = image[x][y];
+      }
+}
+
+void MasktoNodes3(int width, int height, int size, PixeL seed, 
+		Image& image, Image& intersect, float min_cost, int max_grad, 
+		Image& gradient, Image& laplacian, Nodes& item)
+/* This is for FIS test version */
+{
+   	int   i, j;
+   	int	x, y;
+   	int	half_x, half_y;
+   	int	st_x, st_y;
+
+		half_x = half_y = size/2;	
+
+   	st_x = seed.x - half_x;	st_y = seed.y - half_y; 
+
+   	for (i = 0; i < size; i++)
+      for (j = 0; j < size; j++)	{
+      		/*	(x, y) : real coordinates */
+      		x = seed.x - half_x + i;	y = seed.y - half_y + j;
+
+       	if (x < 0 || x > width-1 || y < 0 || y > height-1) 
+        	 	continue;
+       	else if (i == 0 || i == size-1 || j == 0 || j == size-1
+					|| x == 0 || x == width-1 || y == 0 || y == height-1) {
+      	   	item[i][j].expanded = TRUE_;
+     	    	item[i][j].next.x = i;  item[i][j].next.y = j;
+     	    	item[i][j].cost = MAX_COST;
+     	    	continue;
+     	  	}
+       	else if (intersect[x][y] == TRUE_ 
+					&& pxl_cost[x][y] < min_cost)	{
+					/* already expanded and cannot by recomputed */
+      	   	item[i][j].expanded = TRUE_;
+     	    	item[i][j].next.x = i;  item[i][j].next.y = j;
+     	    	item[i][j].cost = MAX_COST;
+     	    	continue;
+     	  	}
+       	else if (intersect[x][y] == TRUE_
+						&& pxl_cost[x][y] >= min_cost) {
+         		item[i][j].expanded = FALSE_;
+      			item[i][j].no_in_heap = 0;	/* not in the heap yet */
+
+	        		item[i][j].loc.x = i;   item[i][j].loc.y = j;
+  	      	item[i][j].coord.x = x;  item[i][j].coord.y = y;
+
+  	  	   	item[i][j].next.x = ( next_pxl[x][y][0] - st_x );
+  	  	   	item[i][j].next.y = ( next_pxl[x][y][1] - st_y );
+
+  		     	item[i][j].cost = pxl_cost[x][y];
+
+   		     	item[i][j].gradient = 
+						1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+   	      	//item[i][j].laplacian = (double)laplacian[x][y];
+
+   	      	item[i][j].N[1].x = i-1;
+   	      	item[i][j].N[1].y = j-1;
+   	      	item[i][j].N[2].x = i;
+  	       	item[i][j].N[2].y = j-1;
+    	     	item[i][j].N[3].x = i+1;
+      	   	item[i][j].N[3].y = j-1;
+      	   	item[i][j].N[4].x = i-1;
+      	   	item[i][j].N[4].y = j;
+      	   	item[i][j].N[5].x = i+1;
+      	   	item[i][j].N[5].y = j;
+      	   	item[i][j].N[6].x = i-1;
+      	   	item[i][j].N[6].y = j+1;
+      	   	item[i][j].N[7].x = i;
+      	   	item[i][j].N[7].y = j+1;
+      	   	item[i][j].N[8].x = i+1;
+      	   	item[i][j].N[8].y = j+1;
+
+		       	item[i][j].intensity = image[x][y];
+					insert_min_heap(&item[i][j]);
+		      }
+     	  	else if (intersect[x][y] == FALSE_)	{
+					/* new region added */
+					/* same as ClearNodes original version */
+    	 	 	item[i][j].no_in_heap = 0;	/* not in the heap yet */
+
+      			item[i][j].expanded = FALSE_;
+
+      			item[i][j].loc.x = i;   item[i][j].loc.y = j;
+     		  	item[i][j].coord.x = x;  item[i][j].coord.y = y;
+
+      		 	item[i][j].next.x = i;  item[i][j].next.y = j;
+      		 	item[i][j].cost = MAX_COST;
+
+       		item[i][j].gradient = 
+						1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+       		//item[i][j].laplacian = (double)laplacian[x][y];
+
+       		item[i][j].N[1].x = i-1;
+       		item[i][j].N[1].y = j-1;
+       		item[i][j].N[2].x = i;
+       		item[i][j].N[2].y = j-1;
+       		item[i][j].N[3].x = i+1;
+       		item[i][j].N[3].y = j-1;
+       		item[i][j].N[4].x = i-1;
+       		item[i][j].N[4].y = j;
+       		item[i][j].N[5].x = i+1;
+       		item[i][j].N[5].y = j;
+       		item[i][j].N[6].x = i-1;
+       		item[i][j].N[6].y = j+1;
+       		item[i][j].N[7].x = i;
+       		item[i][j].N[7].y = j+1;
+       		item[i][j].N[8].x = i+1;
+       		item[i][j].N[8].y = j+1;
+
+       		item[i][j].intensity = image[x][y];
+				}
+       	else {
+         	//MasktoNodes3 : SOMETHING WRONG
+       	}
+
+    	}
+}
+
+void ClearNodes(int width, int height, Nodes item)
+// FIS starting version 
+{
+   int   i, j;
+
+   TotalNodes = 0;
+   max_nodes = 0;
+
+   for (i = 0; i < width; i++)
+      for (j = 0; j < height; j++) {
+         item[i][j].next.x = i;  item[i][j].next.y = j;
+         if (i == 0 || i == width-1 || j == 0 || j == height-1)
+            item[i][j].expanded = TRUE_;
+         else item[i][j].expanded = FALSE_;
+
+         item[i][j].cost = MAX_COST;
+         item[i][j].no_in_heap = 0;
+
+         in_heap[i][j] = FALSE_;
+      }
+}
+
+void ClearNodes2(int width, int height, Nodes& item)
+// FIS 
+{
+   TotalNodes = 0;
+   max_nodes = 0;
+
+}
+
+double fZ3(Node *node, Nodes item)
+{
+	double L;
+
+	L = node->laplacian;
+
+	if ( ABS(L) < 10 ) return 0.0;
+	else return 1.0;
+}  
+
+double fZ_(Node *from, Node *node, Nodes item)
+// considering the diagonal or not condition 
+{
+	double I1, I2;
+	double z2, z4, z6, z8;
+
+	z2 = item[node->N[2].x][node->N[2].y].intensity;
+	z4 = item[node->N[4].x][node->N[4].y].intensity;
+	z6 = item[node->N[5].x][node->N[5].y].intensity;
+	z8 = item[node->N[7].x][node->N[7].y].intensity;
+
+	I1 = 4 * node->intensity - ( z2 + z4 + z6 + z8 );
+
+	z2 = item[from->N[2].x][from->N[2].y].intensity;
+	z4 = item[from->N[4].x][from->N[4].y].intensity;
+	z6 = item[from->N[5].x][from->N[5].y].intensity;
+	z8 = item[from->N[7].x][from->N[7].y].intensity;
+
+	I2 = 4 * from->intensity - ( z2 + z4 + z6 + z8 );
+
+	if ( ABS(I1) < EPS ) return 0.0; /* laplacian value is zero */
+	else if ( I1*I2 <= 0.0 ) /* zero crossing */
+				if ( ABS(I1) <= ABS(I2) ) /* I1 is close to zero */
+					return 0.0;
+	
+	return 1.0;
+}  
+
+double fG(Node *from, Node *node, Nodes item)
+{
+	double G;
+	int Dx, Dy;
+
+	G = node->gradient;
+
+	Dx = from->coord.x - node->coord.x;
+	Dy = from->coord.y - node->coord.y;
+
+	Dx = ABS(Dx); Dy = ABS(Dy);
+
+	if ((Dx + Dy) == 1) /* vertical or horizontal neighbor */
+		G /= SQRT2;	/* smaller cost */
+
+	return( G );
+}
+
+double fG2(Node *from, Node *node, Nodes item)
+{
+	double G;
+	int Dx, Dy;
+
+	G = node->gradient;
+
+	Dx = from->coord.x - node->coord.x;
+	Dy = from->coord.y - node->coord.y;
+
+	if ((Dx*Dx + Dy*Dy) == 1) /* vertical or horizontal neighbor */
+		G *= 0.7071; /* ( 1 / SQRT2) */
+
+	return( G );
+}
+
+double fG2All(Node *from, Node *node)
+{
+	double G;
+	int Dx, Dy;
+
+	//G = node->gradient;
+	////////////////////////////////////////
+	// 02/05/2005
+	// Strengthen the factor of gradient!!! 
+	//G = node->gradient * node->gradient * node->gradient;
+	G = node->gradient * node->gradient * node->gradient * node->gradient * node->gradient;
+
+	Dx = from->coord.x - node->coord.x;
+	Dy = from->coord.y - node->coord.y;
+
+	if ((Dx*Dx + Dy*Dy) == 1) /* vertical or horizontal neighbor */
+		G *= 0.7071; /* ( 1 / SQRT2) */
+
+	return( G );
+}
+
+inline double norm2(double vx, double vy)
+{
+	return sqrt(vx*vx + vy*vy);
+}
+
+inline double dot_product(double a1, double a2, double b1, double b2)
+{
+	return (a1*b1 + a2*b2);
+}
+
+double cost_tangent(Node *from, Node *node, Field& gfield) // expanding from 'from' to 'node'
+{
+	double G;
+	int Dx, Dy;
+	double gx, gy;
+	double dx, dy;
+
+	//G = node->gradient;
+	////////////////////////////////////////
+	// 02/05/2005
+	// Strengthen the factor of gradient!!! 
+	//G = node->gradient * node->gradient * node->gradient;
+	//G = node->gradient * node->gradient * node->gradient * node->gradient * node->gradient;
+	gx = gfield[node->coord.x][node->coord.y].gx;
+	gy = gfield[node->coord.x][node->coord.y].gy;
+	//TRACE("[%d, %d] gx = %.2f, gy = %.2f\n", node->coord.x, node->coord.y, gx, gy);
+	/*
+	for (int i = 0; i < IMAGE_X; i++)
+		for (int j = 0; j < IMAGE_Y; j++) {
+			TRACE("[%d, %d] gx = %.12f, gy = %.12f\n", i, j, gfield[i][j].gx, gfield[i][j].gy);
+		}
+	*/
+
+	//Dx = from->coord.x - node->coord.x;
+	//Dy = from->coord.y - node->coord.y;
+	Dx = node->coord.x - from->coord.x;
+	Dy = node->coord.y - from->coord.y; // OpenGL window: turn by 90 degree!!!
+	dx = (double)Dx;
+	dy = (double)Dy;
+	//TRACE("[%d, %d]->[%d, %d], d(%.20f, %.20f), g(%.20f, %.20f)\n", from->coord.x, from->coord.y, 
+	//	node->coord.x, node->coord.y, dx, dy, gx, gy);
+
+	double d_norm, g_norm;
+	d_norm = norm2(dx, dy);
+	g_norm = norm2(gx, gy);
+	if (g_norm == 0.0) G = 1.0;
+	else { 
+		//G = 1 - ABS( dot_product(dx, dy, gx, gy) / ( d_norm * g_norm ) ); // NO! we need to follow tangent, not gradient!
+		G = ABS( dot_product(dx, dy, gx, gy) / ( d_norm * g_norm ) );
+	}
+
+	//TRACE("G = %.2f\n", G);
+	//TRACE("G = %.2f [%d, %d]->[%d, %d], (%.20f, %.20f)\n", G, from->coord.x, from->coord.y, 
+	//	node->coord.x, node->coord.y, gx, gy);
+
+	//G = pow(G, 2);
+	G = pow(G, 10);
+	//G = pow(G, 0.5);
+
+	/*
+	if ((Dx*Dx + Dy*Dy) == 1) // vertical or horizontal neighbor 
+		G *= 0.7071; // ( 1 / SQRT2) 
+	*/
+
+	return( G );
+}
+
+double unit_dot(PixeL a, PixeL b)
+{
+	double A, B, C;
+
+	A = sqrt( (double)a.x*a.x + (double)a.y*a.y );
+	B = sqrt( (double)b.x*b.x + (double)b.y*b.y );
+
+	C = A*B;
+	if (C < EPS2) /* if one of the vectors is zero vector */
+		return (0.0);
+
+	return ( (a.x*b.x + a.y*b.y) / C );
+}
+
+
+double fD(Node *p, Node *q, Nodes item)
+{
+	PixeL Dp, Dq;
+	PixeL p_q;
+	double pIx, pIy, qIx, qIy;
+	double dp, dq;
+
+	pIx = item[p->coord.x + 1][p->coord.y].intensity - p->intensity;
+	pIy = item[p->coord.x][p->coord.y + 1].intensity - p->intensity;
+	qIx = item[q->coord.x + 1][q->coord.y].intensity - q->intensity;
+	qIy = item[q->coord.x][q->coord.y + 1].intensity - q->intensity;
+
+	Dp.x = (short)pIy; Dp.y = (short)-pIx;
+	Dq.x = (short)qIy; Dq.y = (short)-qIx;
+
+	p_q.x = p->coord.x - q->coord.x;
+	p_q.y = p->coord.y - q->coord.y;
+
+	dp = ABS( unit_dot(Dp, p_q) ); /* 0 <= dp <= 1 */
+	dq = ABS( unit_dot(Dq, p_q) ); /* 0 <= dq <= 1 */
+
+	return( (2.0 - dp - dq) / 2.0 ); 
+}
+
+double l(Node *p, Node *q, Nodes item)
+{
+
+	return( fG(p, q, item) ); 
+
+}
+
+void SaveCurrentRegionToPreviousAndUpdateCumulative(int xw, int yw, 
+	int size, PixeL free, Image& previous, Image& cumulative)
+{
+	int	min_x, max_x, min_y, max_y;
+	int	half_x, half_y;
+	int	i, j;
+
+	half_x = half_y = size/2;
+
+	/* only the actual region is saved getting rid of the boundary */
+	min_x = free.x - half_x + 1;
+	max_x = free.x + half_x - 1;
+	min_y = free.y - half_y + 1;
+	max_y = free.y + half_y - 1;
+
+	if (min_x < 1) min_x = 1;
+	if (min_y < 1) min_y = 1;
+	if (max_x > xw - 2) max_x = xw - 2;
+	if (max_y > yw - 2) max_y = yw - 2;
+
+	for (j = min_y; j <= max_y; j++)	
+		for (i = min_x; i <= max_x; i++)	{
+			previous[i][j] = TRUE_;
+			cumulative[i][j] = TRUE_;
+		}
+}
+
+
+int FindIntersectingRegion3(int xw, int yw, int size, 
+			PixeL free, Image& cumulative, Image& interbound)
+//find if there is intersection between current window and the cumulative region
+// interbound: intersecting points
+{
+   int   min_x, max_x, min_y, max_y;
+   int   half_x, half_y;
+   int   i, j;
+	  int	  intersection_count = 0;		 	
+
+   half_x = half_y = size/2;
+
+   /* avoid the extreme boundary points */
+   min_x = free.x - half_x + 1;  
+   max_x = free.x + half_x - 1;
+   min_y = free.y - half_y + 1;
+   max_y = free.y + half_y - 1;
+
+   if (min_x < 1) min_x = 1;
+   if (min_y < 1) min_y = 1;
+   if (max_x > xw - 2) max_x = xw - 2;
+   if (max_y > yw - 2) max_y = yw - 2;
+
+   for (j = min_y; j <= max_y; j++)
+      for (i = min_x; i <= max_x; i++) {
+				if (cumulative[i][j])	{
+					interbound[i][j] = TRUE_;
+					intersection_count++;
+				}
+   }
+	/* no intersection between current region and cumulative region */
+		if (intersection_count == 0)	
+			return (0);
+		else
+			return (1);	/* success */
+			
+}
+
+int FindIntersectingRegion4(int xw, int yw, int size, PixeL free, PixeL st_point)
+//find if the current window contains the st_point
+// interbound: intersecting points
+{
+	int   min_x, max_x, min_y, max_y;
+	int   half_x, half_y;
+	int	  intersection_count = 0;		 	
+
+   half_x = half_y = size/2;
+
+   /* avoid the extreme boundary points */
+   min_x = free.x - half_x + 1;  
+   max_x = free.x + half_x - 1;
+   min_y = free.y - half_y + 1;
+   max_y = free.y + half_y - 1;
+
+   if (min_x < 1) min_x = 1;
+   if (min_y < 1) min_y = 1;
+   if (max_x > xw - 2) max_x = xw - 2;
+   if (max_y > yw - 2) max_y = yw - 2;
+
+	if (st_point.x >= min_x && st_point.x <= max_x && 
+	   st_point.y >= min_y && st_point.y <= max_y) {
+			intersection_count = 1;
+	}
+
+   	if (intersection_count == 0)	
+		return (0);
+	else
+		return (1);	/* success */
+			
+}
+	
+void ClearRegion(int xw, int yw, int size, PixeL free, Image& image)
+{
+   int   min_x, max_x, min_y, max_y;
+   int   half_x, half_y;
+   int   i, j;
+
+   half_x = half_y = size/2;
+
+   /* avoid the extreme boundary points */
+   min_x = free.x - half_x;  
+   max_x = free.x + half_x;
+   min_y = free.y - half_y;
+   max_y = free.y + half_y;
+
+   if (min_x < 0) min_x = 0;
+   if (min_y < 0) min_y = 0;
+   if (max_x > xw - 1) max_x = xw - 1;
+   if (max_y > yw - 1) max_y = yw - 1;
+
+   for (j = min_y; j <= max_y; j++)
+      for (i = min_x; i <= max_x; i++) {
+				image[i][j] = FALSE_;
+   }
+}
+
+float FindMinCostInIntersectingBoundary(int xw, int yw, 
+			int old_size, int size, PixeL free, PixeL old_free)
+{
+	int	min_x, max_x, min_y, max_y;
+	int	old_min_x, old_max_x, old_min_y, old_max_y;
+	int	half_x, half_y;
+	int	old_half_x, old_half_y;
+	int	i, j;
+	float	min_cost = MAX_COST;
+
+	half_x = half_y = size/2;
+	old_half_x = old_half_y = old_size/2;
+
+	/* avoid the extreme boundary points */
+	min_x = free.x - half_x + 1;	
+	max_x = free.x + half_x - 1;
+	min_y = free.y - half_y + 1;
+	max_y = free.y + half_y - 1;
+
+	old_min_x = old_free.x - old_half_x + 1;	
+	old_max_x = old_free.x + old_half_x - 1;
+	old_min_y = old_free.y - old_half_y + 1;
+	old_max_y = old_free.y + old_half_y - 1;
+
+	if (min_x < 1) min_x = 1;
+	if (min_y < 1) min_y = 1;
+	if (max_x > xw - 2) max_x = xw - 2;
+	if (max_y > yw - 2) max_y = yw - 2;
+
+	if (old_min_x < 1) old_min_x = 1;
+	if (old_min_y < 1) old_min_y = 1;
+	if (old_max_x > xw - 2) old_max_x = xw - 2;
+	if (old_max_y > yw - 2) old_max_y = yw - 2;
+
+	if (old_min_x <= max_x && old_max_x >= min_x &&
+		old_min_y <= max_y && old_max_y >= min_y)	{
+	/* now they are intersecting */
+			if (free.x < old_free.x)		{ /* moved left */ 
+				for (i = old_min_x, j = old_min_y; j <= old_max_y; j++)	
+					if (j >= min_y && j <= max_y)	{
+
+						if (pxl_cost[i][j] < min_cost)	{
+							min_cost = pxl_cost[i][j];
+						}
+					}
+			}
+			else 	{ // moved right : old_free.x < free.x 
+				for (i = old_max_x, j = old_min_y; j <= old_max_y; j++)	
+					if (j >= min_y && j <= max_y)	{
+						if (pxl_cost[i][j] < min_cost)	{
+							min_cost = pxl_cost[i][j];
+						}
+					}
+			}
+			if (free.y < old_free.y) 	{ // moved down 
+				for (j = old_min_y, i = old_min_x; i <= old_max_x; i++)	
+					if (i >= min_x && i <= max_x)	{
+						if (pxl_cost[i][j] < min_cost)	{
+							min_cost = pxl_cost[i][j];
+						}
+					}
+			}
+			else 	{ // moved up : old_free.y < free.y 
+				for (j = old_max_y, i = old_min_x; i <= old_max_x; i++)	
+					if (i >= min_x && i <= max_x)	{
+						if (pxl_cost[i][j] < min_cost)	{
+							min_cost = pxl_cost[i][j];
+						}
+					}
+			}
+
+	}
+	return (min_cost);
+}
+
+void SaveCumulativeNextPxl(PixeL free, PixeL seed, PxlImage& next_pxl,
+			PxlImage& cumulative_next_pxl)
+// seed -> free
+{
+	int	x, y, next_x, next_y;
+
+	if (free.x == seed.x && free.y == seed.y)	{
+		cumulative_next_pxl[free.x][free.y][0] = seed.x;
+		cumulative_next_pxl[free.x][free.y][1] = seed.y;
+		return;
+	}
+	x = free.x;
+	y = free.y;
+	next_x = next_pxl[x][y][0];
+	next_y = next_pxl[x][y][1];
+	while(1) {
+		cumulative_next_pxl[next_x][next_y][0] = x;
+		cumulative_next_pxl[next_x][next_y][1] = y;
+		if (next_x == seed.x && next_y == seed.y)
+			break;
+		
+		x = next_x;
+		y = next_y;
+		next_x = next_pxl[x][y][0];
+		next_y = next_pxl[x][y][1];
+		//if (next_x == x && next_y == y)	{
+		//	TRACE("Save Cumulative Next Pxl: Self Loop Exists !!!\n");
+		//	return;
+		//}
+	}
+}
+
+void SaveCumulativeNextPxl2(PixeL free, PixeL seed, PxlImage next_pxl,
+			PxlImage cumulative_next_pxl)
+// opposite order : free -> seed
+{
+	int	x, y, next_x, next_y;
+
+	if (free.x == seed.x && free.y == seed.y)	{
+		cumulative_next_pxl[free.x][free.y][0] = seed.x;
+		cumulative_next_pxl[free.x][free.y][1] = seed.y;
+		return;
+	}
+	x = free.x;
+	y = free.y;
+	next_x = next_pxl[x][y][0];
+	next_y = next_pxl[x][y][1];
+	while(1) {
+		cumulative_next_pxl[x][y][0] = next_x;
+		cumulative_next_pxl[x][y][1] = next_y;
+		if (next_x == seed.x && next_y == seed.y)
+			break;
+		x = next_x;
+		y = next_y;
+		next_x = next_pxl[x][y][0];
+		next_y = next_pxl[x][y][1];
+	}
+}
+
+void MasktoNodes2AvoidingIntersection(int width, int height, int size, PixeL seed, Image& image, int max_grad, 
+				 Image& gradient, Image& laplacian, PxlImage& cumulative_next_pxl, Nodes& item)
+// This is for ACTIVATED2_: butten 1 pressed and omitting the st_point
+{
+	int   i, j;
+	int	x, y;
+	int	half_x, half_y;
+	int	next_x, next_y, next_i, next_j;
+
+	half_x = half_y = size/2;	
+
+	ClearMinHeap();
+
+	for (i = 0; i < size; i++)
+		 for (j = 0; j < size; j++) {
+
+      	x = seed.x - half_x + i;	y = seed.y - half_y + j;
+
+      	item[i][j].no_in_heap = 0;	/* not in the heap yet */
+
+         if (i == 0 || i == size-1 || j == 0 || j == size-1 || 
+         		x <= 0 || x >= width-1 || y <= 0 || y >= height-1) 
+            item[i][j].expanded = TRUE_; // already visited
+         else 
+         	item[i][j].expanded = FALSE_;
+
+      	if (x < 0)	x = 0;	if (x > width-1)	x = width - 1;
+      	if (y < 0)	y = 0;	if (y > height-1)	y = height - 1;
+
+		next_x = cumulative_next_pxl[x][y][0];
+		next_y = cumulative_next_pxl[x][y][1];
+		//if (next_x != cumulative_next_pxl[x][y][0] || next_y != cumulative_next_pxl[x][y][1]) { // you stupid fuck!
+		if ( (x != st_point.x || y != st_point.y) && (next_x != x || next_y != y) ) { // this is the correct statement
+			item[i][j].expanded = TRUE_; // already visited
+			next_i = next_x - (seed.x - half_x);	
+			next_j = next_y - (seed.y - half_y);
+			item[next_i][next_j].expanded = TRUE_;
+		}
+
+		// loc is the relative position in the mask 
+         item[i][j].loc.x = i;   item[i][j].loc.y = j;
+		// coord is the absolute position in the image 
+         item[i][j].coord.x = x;  item[i][j].coord.y = y;
+         item[i][j].next.x = i;  item[i][j].next.y = j;
+
+         item[i][j].cost = MAX_COST;
+         item[i][j].gradient = 
+					1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+         //item[i][j].laplacian = (double)laplacian[x][y];
+
+         item[i][j].N[1].x = i-1;
+         item[i][j].N[1].y = j-1;
+         item[i][j].N[2].x = i;
+         item[i][j].N[2].y = j-1;
+         item[i][j].N[3].x = i+1;
+         item[i][j].N[3].y = j-1;
+         item[i][j].N[4].x = i-1;
+         item[i][j].N[4].y = j;
+         item[i][j].N[5].x = i+1;
+         item[i][j].N[5].y = j;
+         item[i][j].N[6].x = i-1;
+         item[i][j].N[6].y = j+1;
+         item[i][j].N[7].x = i;
+         item[i][j].N[7].y = j+1;
+         item[i][j].N[8].x = i+1;
+         item[i][j].N[8].y = j+1;
+
+         item[i][j].intensity = image[x][y];
+      }
+}
+
+
+int CheckIfInfiniteLoopExists(PixeL free, PixeL seed)
+{
+	int 	vert[2], old[2];
+	int		warning = 0;
+
+	old[0] = free.x;
+	old[1] = free.y;
+	while(1) {
+		vert[0] = next_pxl[old[0]][old[1]][0];
+		vert[1] = next_pxl[old[0]][old[1]][1];
+        if (old[0] == vert[0] && old[1] == vert[1]) {
+			warning = 1; 
+			break;	
+		}
+		old[0] = vert[0];
+		old[1] = vert[1];
+		if (vert[0] == seed.x && vert[1] == seed.y) break;
+	}
+
+	return (warning);
+
+}
+
+
+void MasktoNodes3AvoidingIntersection(int width, int height, int size, PixeL seed, Image& image, Image& intersect, 
+		float min_cost, int max_grad, Image& gradient, Image& laplacian, PxlImage& cumulative_next_pxl, Nodes& item)
+// This is for EL start up version 
+{
+   	int	i, j;
+	int	next_i, next_j, next_x, next_y;	
+   	int	x, y;
+   	int	half_x, half_y;
+   	int	st_x, st_y;
+
+	half_x = half_y = size/2;	
+
+   	st_x = seed.x - half_x;	st_y = seed.y - half_y; 
+
+	for (i = 0; i < size; i++)
+		for (j = 0; j < size; j++)	{
+      		//	(x, y) : real coordinates */
+      		x = seed.x - half_x + i;	y = seed.y - half_y + j;
+
+       		if (x < 0 || x > width-1 || y < 0 || y > height-1) 
+        		continue;
+       		else if (i == 0 || i == size-1 || j == 0 || j == size-1
+					|| x == 0 || x == width-1 || y == 0 || y == height-1) {
+      		   	item[i][j].expanded = TRUE_;
+     	    	item[i][j].next.x = i;  item[i][j].next.y = j;
+     	    	item[i][j].cost = MAX_COST;
+     	    	continue;
+     	  	}
+			///*
+			else if ( (cumulative_next_pxl[x][y][0] != x || cumulative_next_pxl[x][y][1] != y) &&
+					(x != st_point.x || y != st_point.y) ) { // ecept for the starting point
+				next_x = cumulative_next_pxl[x][y][0];
+				next_y = cumulative_next_pxl[x][y][1];
+				item[i][j].expanded = TRUE_; // already visited
+				next_i = next_x - (seed.x - half_x);	
+				next_j = next_y - (seed.y - half_y);
+				item[next_i][next_j].expanded = TRUE_;
+				continue;
+			}
+			//*/
+       		else if (intersect[x][y] == TRUE_ && pxl_cost[x][y] < min_cost)	{
+			// already expanded and cannot by recomputed since the cost is below the mic_cost of the window boundary
+		  	   	item[i][j].expanded = TRUE_;
+     	    	item[i][j].next.x = i;  item[i][j].next.y = j;
+     	    	item[i][j].cost = MAX_COST;
+     	    	continue;
+     	  	}
+       		else if (intersect[x][y] == TRUE_ && pxl_cost[x][y] >= min_cost) {
+	        // intersecting region points and can be recomputed 
+         		item[i][j].expanded = FALSE_;
+      			item[i][j].no_in_heap = 0;	/* not in the heap yet */
+
+	        	item[i][j].loc.x = i;   item[i][j].loc.y = j;
+  	      		item[i][j].coord.x = x;  item[i][j].coord.y = y;
+
+  	  	   		item[i][j].next.x = ( next_pxl[x][y][0] - st_x );
+  	  	   		item[i][j].next.y = ( next_pxl[x][y][1] - st_y );
+
+  		     	item[i][j].cost = pxl_cost[x][y];
+
+   		     	item[i][j].gradient = 1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+   	      		//item[i][j].laplacian = (double)laplacian[x][y];
+
+   	      		item[i][j].N[1].x = i-1;
+   	      		item[i][j].N[1].y = j-1;
+   	      		item[i][j].N[2].x = i;
+  	       		item[i][j].N[2].y = j-1;
+    	     		item[i][j].N[3].x = i+1;
+      	   		item[i][j].N[3].y = j-1;
+      	   		item[i][j].N[4].x = i-1;
+      	   		item[i][j].N[4].y = j;
+      	   		item[i][j].N[5].x = i+1;
+      	   		item[i][j].N[5].y = j;
+      	   		item[i][j].N[6].x = i-1;
+      	   		item[i][j].N[6].y = j+1;
+      	   		item[i][j].N[7].x = i;
+      	   		item[i][j].N[7].y = j+1;
+      	   		item[i][j].N[8].x = i+1;
+      	   		item[i][j].N[8].y = j+1;
+
+		       	item[i][j].intensity = image[x][y];
+					insert_min_heap(&item[i][j]);
+		    }
+     	  	else if (intersect[x][y] == FALSE_)	{
+					/* new region added */
+					/* same as ClearNodes original version */
+    	 	 	item[i][j].no_in_heap = 0;	/* not in the heap yet */
+
+      			item[i][j].expanded = FALSE_;
+
+      			item[i][j].loc.x = i;   item[i][j].loc.y = j;
+     		  	item[i][j].coord.x = x;  item[i][j].coord.y = y;
+
+      		 	item[i][j].next.x = i;  item[i][j].next.y = j;
+      		 	item[i][j].cost = MAX_COST;
+
+       			item[i][j].gradient = 
+							1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+       			//item[i][j].laplacian = (double)laplacian[x][y];
+
+       			item[i][j].N[1].x = i-1;
+       			item[i][j].N[1].y = j-1;
+       			item[i][j].N[2].x = i;
+       			item[i][j].N[2].y = j-1;
+       			item[i][j].N[3].x = i+1;
+       			item[i][j].N[3].y = j-1;
+       			item[i][j].N[4].x = i-1;
+       			item[i][j].N[4].y = j;
+       			item[i][j].N[5].x = i+1;
+       			item[i][j].N[5].y = j;
+       			item[i][j].N[6].x = i-1;
+       			item[i][j].N[6].y = j+1;
+       			item[i][j].N[7].x = i;
+       			item[i][j].N[7].y = j+1;
+       			item[i][j].N[8].x = i+1;
+       			item[i][j].N[8].y = j+1;
+
+       			item[i][j].intensity = image[x][y];
+			}
+	      	else {
+         		printf("MasktoNodes3 : SOMETHING WRONG!!!!\n");
+		   	}
+
+    	}
+}
+
+
+void Intelligent_Scissor(int size, int width, int height, Nodes& item)
+{
+// This is EL used when seed selection 
+	Node *q, *r;
+	int i;
+	float tmp_cost;
+	PixeL	loc;
+	int	half_x, half_y;
+
+	half_x = half_y = size/2;
+	loc.x = half_x;
+	loc.y = half_y;
+
+	item[loc.x][loc.y].cost = 0.0;
+	q = &item[loc.x][loc.y];
+	pxl_cost[q->coord.x][q->coord.y] = 0.0;
+	insert_min_heap(&item[loc.x][loc.y]);
+	
+	while ( !HEAP_EMPTY(TotalNodes) ) {
+		q = delete_root();
+		q->expanded = TRUE_;
+		for(i=1; i<=8; ++i) {
+			r = &item[q->N[i].x][q->N[i].y];	// current neighbor node 
+			if( r->expanded == TRUE_ ) continue; // speed up this line 
+
+			tmp_cost = (float)(q->cost + fG2All(q, r));
+
+			if ( in_heap[r->loc.x][r->loc.y] && tmp_cost < r->cost ) 
+				delete_item(r->no_in_heap);
+
+			if ( ! in_heap[r->loc.x][r->loc.y] ) {
+				r->cost = tmp_cost;
+				r->next.x = q->loc.x;
+				r->next.y = q->loc.y;
+
+				next_pxl[r->coord.x][r->coord.y][0] = q->coord.x; 
+				next_pxl[r->coord.x][r->coord.y][1] = q->coord.y; 
+				pxl_cost[r->coord.x][r->coord.y] = tmp_cost;
+
+				insert_min_heap(r);
+			}
+	   }
+	}	/* end of while */
+
+	
+}
+
+void Intelligent_Scissor_Oriented(int size, int width, int height, Nodes& item)
+{
+	Node *q, *r;
+	int i;
+	float tmp_cost;
+	PixeL	loc;
+	int	half_x, half_y;
+
+	half_x = half_y = size/2;
+	loc.x = half_x;
+	loc.y = half_y;
+
+	item[loc.x][loc.y].cost = 0.0;
+	q = &item[loc.x][loc.y];
+	pxl_cost[q->coord.x][q->coord.y] = 0.0;
+	insert_min_heap(&item[loc.x][loc.y]);
+	
+	while ( !HEAP_EMPTY(TotalNodes) ) {
+		q = delete_root();
+		q->expanded = TRUE_;
+		for(i=1; i<=8; ++i) {
+			r = &item[q->N[i].x][q->N[i].y];	// current neighbor node 
+			if( r->expanded == TRUE_ ) continue; // speed up this line 
+
+			//tmp_cost = (float)(q->cost + fG2All(q, r));
+			tmp_cost = (float)(q->cost + cost_tangent(q, r, gfield));
+
+			if ( in_heap[r->loc.x][r->loc.y] && tmp_cost < r->cost ) 
+				delete_item(r->no_in_heap);
+
+			if ( ! in_heap[r->loc.x][r->loc.y] ) {
+				r->cost = tmp_cost;
+				r->next.x = q->loc.x;
+				r->next.y = q->loc.y;
+
+				next_pxl[r->coord.x][r->coord.y][0] = q->coord.x; 
+				next_pxl[r->coord.x][r->coord.y][1] = q->coord.y; 
+				pxl_cost[r->coord.x][r->coord.y] = tmp_cost;
+
+				insert_min_heap(r);
+			}
+	   }
+	}	/* end of while */
+
+	
+}
+
+
+void Intelligent_Scissor2(int size, int width, int height, Nodes& item)
+// This is EL main
+{
+	Node *q, *r;
+	int i;
+	double tmp_cost;
+	int	half_x, half_y;
+
+	half_x = half_y = size/2;
+
+	while ( !HEAP_EMPTY(TotalNodes) ) {
+		q = delete_root();
+		q->expanded = TRUE_;
+		
+		for(i = 1; i <= 8; ++i) {
+			r = &item[q->N[i].x][q->N[i].y];
+			if( r->expanded == TRUE_ ) continue; 
+			tmp_cost = q->cost + fG2All(q, r);
+
+			if ( in_heap[r->loc.x][r->loc.y] && tmp_cost < r->cost ) 
+				delete_item(r->no_in_heap);
+
+			if ( ! in_heap[r->loc.x][r->loc.y] ) {
+				r->cost = tmp_cost;
+
+				r->next.x = q->loc.x;
+				r->next.y = q->loc.y;
+
+				next_pxl[r->coord.x][r->coord.y][0] = q->coord.x; 
+				next_pxl[r->coord.x][r->coord.y][1] = q->coord.y; 
+
+				pxl_cost[r->coord.x][r->coord.y] = (float)tmp_cost;
+
+				insert_min_heap(r);
+			}
+	   }
+	}
+
+}
+
+void Intelligent_Scissor2_Oriented(int size, int width, int height, Nodes& item)
+// This is EL main
+{
+	Node *q, *r;
+	int i;
+	double tmp_cost;
+	int	half_x, half_y;
+
+	half_x = half_y = size/2;
+
+	while ( !HEAP_EMPTY(TotalNodes) ) {
+		q = delete_root();
+		q->expanded = TRUE_;
+		
+		for(i = 1; i <= 8; ++i) {
+			r = &item[q->N[i].x][q->N[i].y];
+			if( r->expanded == TRUE_ ) continue; 
+			
+			//tmp_cost = q->cost + fG2All(q, r);
+			tmp_cost = q->cost + cost_tangent(q, r, gfield);
+
+			if ( in_heap[r->loc.x][r->loc.y] && tmp_cost < r->cost ) 
+				delete_item(r->no_in_heap);
+
+			if ( ! in_heap[r->loc.x][r->loc.y] ) {
+				r->cost = tmp_cost;
+
+				r->next.x = q->loc.x;
+				r->next.y = q->loc.y;
+
+				next_pxl[r->coord.x][r->coord.y][0] = q->coord.x; 
+				next_pxl[r->coord.x][r->coord.y][1] = q->coord.y; 
+
+				pxl_cost[r->coord.x][r->coord.y] = (float)tmp_cost;
+
+				insert_min_heap(r);
+			}
+	   }
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ImagetoNodesNPR(int width, int height, Image image, int max_grad, Image gradient)
+// this is for TIPP NPR version
+{
+	int	x, y;
+
+	ClearMinHeap();
+
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++) {
+			// item[i][j] = (Node *)malloc(sizeof(Node));
+
+			item[x][y].no_in_heap = 0;	// not in the heap yet 
+
+			//if (i == 0 || i == size-1 || j == 0 || j == size-1 || x <= 0 || x >= width-1 || y <= 0 || y >= height-1) 
+			//item[i][j].expanded = TRUE_;
+			//else 
+			item[x][y].expanded = FALSE_;
+
+			/* loc is the relative position in the mask */
+			item[x][y].loc.x = x;   item[x][y].loc.y = y;
+			/* coord is the absolute position in the image */
+			item[x][y].coord.x = x;  item[x][y].coord.y = y;
+			item[x][y].next.x = x;  item[x][y].next.y = y;
+
+			//item[x][y].cost = MAX_COST;
+			item[x][y].cost = 255 - 255; // initialized as zero: maximum difference
+			item[x][y].gradient = 1 - sqrt( (double)gradient[x][y] / (double)max_grad );
+			//item[x][y].laplacian = 0;
+
+			item[x][y].N[1].x = 0;
+			item[x][y].N[1].y = 0;
+			item[x][y].N[2].x = 0;
+			item[x][y].N[2].y = 0;
+			item[x][y].N[3].x = 0;
+			item[x][y].N[3].y = 0;
+			item[x][y].N[4].x = 0;
+			item[x][y].N[4].y = 0;
+			item[x][y].N[5].x = 0;
+			item[x][y].N[5].y = 0;
+			item[x][y].N[6].x = 0;
+			item[x][y].N[6].y = 0;
+			item[x][y].N[7].x = 0;
+			item[x][y].N[7].y = 0;
+			item[x][y].N[8].x = 0;
+			item[x][y].N[8].y = 0;
+
+			item[x][y].intensity = image[x][y];
+		}      
+}
+
+void ClearNodesNPR(int width, int height, Nodes item)
+// TIPP NPR 
+{
+   int   i, j;
+
+   TotalNodes = 0; // the total number of nodes in the heap now
+   max_nodes = 0; // the maximum number of nodes reached during the heap growing and shrinking
+
+   for (i = 0; i < width; i++)
+      for (j = 0; j < height; j++) {
+         item[i][j].next.x = i;  item[i][j].next.y = j;
+         if (i == 0 || i == width-1 || j == 0 || j == height-1)
+            item[i][j].expanded = TRUE_;
+         else item[i][j].expanded = FALSE_;
+
+         item[i][j].cost = MAX_COST;
+         item[i][j].no_in_heap = 0;
+
+         in_heap[i][j] = FALSE_;
+      }
+}
+
+void ClearNodesNPR2(int width, int height, Nodes item)
+{
+   TotalNodes = 0;
+   max_nodes = 0;
+
+}
+
+#define RGB_GETRED(rgb)    ((rgb) & 0xff) 
+#define RGB_GETGREEN(rgb)    (((rgb) >> 8) & 0xff) 
+#define RGB_GETBLUE(rgb)    (((rgb) >> 16) & 0xff)  
+#define dist3(x, y, z) sqrt(((double)x)*((double)x) + ((double)y)*((double)y) + ((double)z)*((double)z))
+#define dist2(x1, y1, x2, y2) sqrt( (((double)x1)-((double)x2))*(((double)x1)-((double)x2)) + (((double)y1)-((double)y2))*(((double)y1)-((double)y2)) )
+
+void InitNodesNPR(int width, int height)
+// TIPP NPR 
+{
+	int   x, y;
+
+	TotalNodes = 0; // the total number of nodes in the heap now
+	max_nodes = 0; // the maximum number of nodes reached during the heap growing and shrinking
+
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++) {
+			//item[loc.x][loc.y].cost = 0.0;
+			//q = &item[loc.x][loc.y];
+			//pxl_cost[q->coord.x][q->coord.y] = 0.0;
+			insert_min_heap(&item[x][y]);
+			//item[i][j].expanded = FALSE_;
+			
+			//item[i][j].cost = MAX_COST;
+			//item[i][j].no_in_heap = 0; // no_in_heap starts from 1, not 0: 0 means not in heap
+
+			//in_heap[i][j] = FALSE_;
+		}
+}
+
+void ClearMemDC(CDC *dc)
+{
+	int	x, y;
+
+	for (y = 0; y < IMAGE_Y; y++) {
+		for (x = 0; x < IMAGE_X; x++) {
+			/// Set Pixel in MemDC
+			dc->SetPixelV(x, y, RGB(255, 255, 255));
+		}
+	}
+}
+
+void CCubeView::DrawStrokes(int size, int width, int height)
+{
+// NPR TIPP
+	Node *q, *p;
+	int i, j, x, y;
+	float tmp_cost;
+	int	half;
+	float	diff;
+	GLubyte	r, g, b;
+	float theta, w, l;
+	int	grad;
+	CPen pen, *pOldPen;
+	int	st_x, st_y, end_x, end_y;
+
+	half = size/2;
+	theta = (float)(PI / 4.0); // 45 degree
+	w = 3;
+	l = 7;
+	//Dbuffer: original
+	//memDC: test and check compute difference
+	//double_buffer: update and/or transfer back to memDC2
+	ClearMemDC(&memDC);
+	
+	while ( !HEAP_EMPTY(TotalNodes) ) {
+		q = delete_root();
+		//q->expanded = TRUE_;
+		x = q->coord.x;	y = q->coord.y;
+
+		r = Dbuffer[(y * IMAGE_X + x) * 3 + 0];
+		g = Dbuffer[(y * IMAGE_X + x) * 3 + 1];
+		b = Dbuffer[(y * IMAGE_X + x) * 3 + 2];
+		
+		//pen.CreatePen(PS_SOLID, (int)w, RGB(0, 255, 255));
+		pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+		pOldPen = (CPen *)memDC.SelectObject(&pen);
+
+		grad = gradient[x][y];
+		end_x = st_x = x;	end_y = st_y = y;
+
+		while (1) {
+			end_x += 1;	end_y += 1;
+			if (end_x > IMAGE_X-1 || end_y > IMAGE_Y-1) { 
+				end_x -= 1; end_y -= 1;
+				break;
+			}
+			if (grad < gradient[end_x][end_y]) break;
+
+			grad = gradient[end_x][end_y];
+
+			if ( dist2(x, y, end_x, end_y) >= l/2 ) break;
+		}
+		grad = gradient[x][y];
+		while (1) {
+			st_x -= 1;	st_y -= 1;
+			if (st_x < 0 || st_y < 0) { 
+				st_x += 1; st_y += 1;
+				break;
+			}
+			if (grad < gradient[st_x][st_y]) break;
+
+			grad = gradient[st_x][st_y];
+
+			if ( dist2(x, y, st_x, st_y) >= l/2 ) break;
+		}
+
+		memDC.MoveTo(st_x, IMAGE_Y-1-st_y);
+		memDC.LineTo(end_x, IMAGE_Y-1-end_y);
+	
+		memDC.SelectObject(pOldPen);
+		pen.DeleteObject(); 
+
+		CClientDC dc(this);
+
+		dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+		// Update the min heap
+		for (j = -half; j <= half; j++) {
+			for (i = -half; i <= half; i++) {
+				if (x+i < 0 || x+i > IMAGE_X-1 || y+j < 0 || y+j > IMAGE_Y-1) {
+					continue;
+				}
+				//value += image[x+i][y+j];
+				//count++;
+				p = &item[x+i][y+j];	// current neighbor node 
+				//if( r->expanded == TRUE_ ) continue; 
+				
+				//tmp_cost = (float)(q->cost + fG2All(q, r));
+				r = ABS ( Dbuffer[((IMAGE_Y-1-y) * IMAGE_X + x) * 3 + 0] - (GLubyte)RGB_GETRED(memDC.GetPixel(x, y)) );
+				g = ABS ( Dbuffer[((IMAGE_Y-1-y) * IMAGE_X + x) * 3 + 1] - (GLubyte)RGB_GETGREEN(memDC.GetPixel(x, y)) );
+				b = ABS ( Dbuffer[((IMAGE_Y-1-y) * IMAGE_X + x) * 3 + 2] - (GLubyte)RGB_GETBLUE(memDC.GetPixel(x, y)) );
+				diff = (float)dist3(r, g, b);
+				tmp_cost = (float)diff;
+
+				//if ( in_heap[r->coord.x][r->coord.y] && tmp_cost < r->cost ) 
+				if ( tmp_cost < p->cost ) // got smaller
+					delete_item(p->no_in_heap);
+
+				if ( ! in_heap[p->coord.x][p->coord.y] ) {
+					p->cost = tmp_cost;
+					//r->next.x = q->coord.x;
+					//r->next.y = q->coord.y;
+
+					//next_pxl[r->coord.x][r->coord.y][0] = q->coord.x; 
+					//next_pxl[r->coord.x][r->coord.y][1] = q->coord.y; 
+					//pxl_cost[r->coord.x][r->coord.y] = tmp_cost;
+
+					insert_min_heap(p);
+				}
+			}
+	   }
+	}	// end of while 
+
+	
+}
+
+
+void CCubeView::DrawStrokesRandomLaplacian(int width, int height)
+{
+// NPR TIPP
+	int i, j, x, y;
+	int	half;
+	float	diff_old, diff_new;
+	GLubyte	r, g, b;
+	float theta, w, l;
+	int	lapla;
+	CPen pen, *pOldPen;
+	int	st_x, st_y, end_x, end_y;
+	int	fail_count;
+	
+	theta = (float)(PI / 4.0); // 45 degree
+	w = 3;
+	l = 7;
+	//l = 15;
+	half = (int)l; // actually, it should bigger than l/1.414
+	//Dbuffer: original
+	//memDC: test and check compute difference
+	//double_buffer: update and/or transfer back to memDC2
+	ClearMemDC(&memDC); // clear the canvas white
+	ClearMemDC(&double_buffer); // clear the canvas white
+	//ClearImage(IMAGE_X, IMAGE_Y, in_heap); // whether or not the pixel has been visited
+
+	fail_count = 0;
+
+	CClientDC dc(this);
+
+	srand( (unsigned)time( NULL ) );
+
+	// first put enough strokes randomly
+	for (i = 0; i < IMAGE_X * IMAGE_Y / 3; i++) {
+		x = (int) ( (IMAGE_X-1) * (float)rand() / RAND_MAX );
+		y = (int) ( (IMAGE_Y-1) * (float)rand() / RAND_MAX );
+
+		r = Dbuffer[(y * IMAGE_X + x) * 3 + 0];
+		g = Dbuffer[(y * IMAGE_X + x) * 3 + 1];
+		b = Dbuffer[(y * IMAGE_X + x) * 3 + 2];
+		
+		//pen.CreatePen(PS_SOLID, (int)w, RGB(0, 255, 255));
+		pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+		pOldPen = (CPen *)memDC.SelectObject(&pen);
+
+		lapla = gradient[x][y];
+		end_x = st_x = x;	end_y = st_y = y;
+
+		// Draw edge-clipped test stroke on memDC
+		while (1) {
+			end_x += 1;	end_y += 1;
+			if (end_x > IMAGE_X-1 || end_y > IMAGE_Y-1) { 
+				end_x -= 1; end_y -= 1;
+				break;
+			}
+			if (lapla * gradient[end_x][end_y] < 0) break;
+
+			lapla = gradient[end_x][end_y];
+
+			if ( dist2(x, y, end_x, end_y) >= l/2 ) break;
+		}
+		lapla = gradient[x][y];
+		while (1) {
+			st_x -= 1;	st_y -= 1;
+			if (st_x < 0 || st_y < 0) { 
+				st_x += 1; st_y += 1;
+				break;
+			}
+			if (lapla * gradient[st_x][st_y] < 0) break;
+
+			lapla = gradient[st_x][st_y];
+
+			if ( dist2(x, y, st_x, st_y) >= l/2 ) break;
+		}
+
+		memDC.MoveTo(st_x, IMAGE_Y-1-st_y);
+		memDC.LineTo(end_x, IMAGE_Y-1-end_y);
+	
+		memDC.SelectObject(pOldPen);
+		pen.DeleteObject(); 
+
+		dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+	}
+	double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY); // copy memDC to double_buffer
+
+	// put the strokes randomly but test first
+	while (1) {
+		x = (int) ( (IMAGE_X-1) * (float)rand() / RAND_MAX );
+		y = (int) ( (IMAGE_Y-1) * (float)rand() / RAND_MAX );
+
+		if (in_heap[x][y] == 1) continue; // Already visited !!!
+
+		in_heap[x][y] = 1; // this pixel has been visited. Do not visit it again
+
+		r = Dbuffer[(y * IMAGE_X + x) * 3 + 0];
+		g = Dbuffer[(y * IMAGE_X + x) * 3 + 1];
+		b = Dbuffer[(y * IMAGE_X + x) * 3 + 2];
+		
+		//pen.CreatePen(PS_SOLID, (int)w, RGB(0, 255, 255));
+		pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+		pOldPen = (CPen *)memDC.SelectObject(&pen);
+
+		lapla = gradient[x][y];
+		end_x = st_x = x;	end_y = st_y = y;
+
+		// Draw edge-clipped test stroke on memDC
+		while (1) {
+			end_x += 1;	end_y += 1;
+			if (end_x > IMAGE_X-1 || end_y > IMAGE_Y-1) { 
+				end_x -= 1; end_y -= 1;
+				break;
+			}
+			if (lapla * gradient[end_x][end_y] < 0) break;
+
+			lapla = gradient[end_x][end_y];
+
+			if ( dist2(x, y, end_x, end_y) >= l/2 ) break;
+		}
+		lapla = gradient[x][y];
+		while (1) {
+			st_x -= 1;	st_y -= 1;
+			if (st_x < 0 || st_y < 0) { 
+				st_x += 1; st_y += 1;
+				break;
+			}
+			if (lapla * gradient[st_x][st_y] < 0) break;
+
+			lapla = gradient[st_x][st_y];
+
+			if ( dist2(x, y, st_x, st_y) >= l/2 ) break;
+		}
+
+		memDC.MoveTo(st_x, IMAGE_Y-1-st_y);
+		memDC.LineTo(end_x, IMAGE_Y-1-end_y);
+	
+		memDC.SelectObject(pOldPen);
+		pen.DeleteObject(); 
+
+		//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+		diff_old = diff_new = 0;
+
+		// Compare the old difference and the new difference in local mask
+		for (j = -half; j <= half; j++) {
+			for (i = -half; i <= half; i++) {
+				if (x+i < 0 || x+i > IMAGE_X-1 || y+j < 0 || y+j > IMAGE_Y-1) {
+					continue;
+				}
+				if ( memDC.GetPixel(x, (IMAGE_Y-1-y)) == double_buffer.GetPixel(x, (IMAGE_Y-1-y)) ) {
+					// exactly the same color. the new stroke hasn't touched this pixel
+					continue;
+				}
+							
+				r = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 0] - (GLubyte)RGB_GETRED(memDC.GetPixel(x, (IMAGE_Y-1-y))) );
+				g = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 1] - (GLubyte)RGB_GETGREEN(memDC.GetPixel(x, (IMAGE_Y-1-y))) );
+				b = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 2] - (GLubyte)RGB_GETBLUE(memDC.GetPixel(x, (IMAGE_Y-1-y))) );
+				diff_new += (float)dist3(r, g, b);
+
+				r = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 0] - (GLubyte)RGB_GETRED(double_buffer.GetPixel(x, (IMAGE_Y-1-y))) );
+				g = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 1] - (GLubyte)RGB_GETGREEN(double_buffer.GetPixel(x, (IMAGE_Y-1-y))) );
+				b = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 2] - (GLubyte)RGB_GETBLUE(double_buffer.GetPixel(x, (IMAGE_Y-1-y))) );
+				diff_old += (float)dist3(r, g, b);
+			}
+		}
+		
+		if (diff_new < diff_old) { // there has been improvement
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY); // copy memDC to double_buffer
+			fail_count = 0; // reinitialized
+			
+		}
+		else { // there is no improvement
+			fail_count++;
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY); // copy double_buffer back to memDC
+		}
+		dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+		
+		if (fail_count > 30) break; // get out of the while loop
+
+	}	// end of while 
+	//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+	TRACE("Draw Lapla Strokes Ended\n");
+}
+
+void DrawStrokesRandom(CDC& dc, int width, int height)
+{
+// NPR TIPP
+	Node *q, *p;
+	int i, j, x, y;
+	float tmp_cost;
+	int	half;
+	GLubyte	r, g, b;
+	float theta, w, l;
+	int	grad;
+	CPen pen, *pOldPen;
+	int	st_x, st_y, end_x, end_y;
+	float	diff_old, diff_new;
+	int	fail_count;
+	float stroke_len;
+	int	perturb_r, perturb_g, perturb_b;
+	int	no;
+	int	stroke_count = 0;
+
+	theta = (float)(PI / 4.0); // 45 degree
+	//w = 3;
+	w = 4;
+	//w = 5;
+	//w = 6;
+	//w = 7;
+	l = 15; // for random placement
+	//half = l; // actually, it should bigger than l/1.414
+	//Dbuffer: original
+	//memDC: test and check compute difference
+	//double_buffer: update and/or transfer back to memDC2
+	ClearMemDC(&memDC); // clear the canvas white
+	ClearMemDC(&double_buffer); // clear the canvas white
+	ClearImage(IMAGE_X, IMAGE_Y, in_heap); // whether or not the pixel has been visited
+
+	fail_count = 0;
+
+	//CClientDC dc(this);
+
+	srand( (unsigned)time( NULL ) );
+
+	///*
+	// first put enough strokes randomly
+	for (i = 0; i < IMAGE_X * IMAGE_Y / 20; i++) {
+		x = (int) ( (IMAGE_X-1) * (float)rand() / RAND_MAX );
+		y = (int) ( (IMAGE_Y-1) * (float)rand() / RAND_MAX );
+
+		r = Dbuffer[(y * IMAGE_X + x) * 3 + 0];
+		g = Dbuffer[(y * IMAGE_X + x) * 3 + 1];
+		b = Dbuffer[(y * IMAGE_X + x) * 3 + 2];
+
+		//////////////////////////////////////////////////////////
+		// Perturb R, G, B color
+		perturb_r = (int) ( (60) * (float)rand() / RAND_MAX );
+		perturb_r -= 30;
+		if (r + perturb_r > 255) { r = 255; }
+		else if (r + perturb_r < 0) { r = 0; }
+		else r = r + perturb_r;
+		perturb_g = (int) ( (60) * (float)rand() / RAND_MAX );
+		perturb_g -= 30;
+		if (g + perturb_g > 255) { g = 255; }
+		else if (g + perturb_g < 0) { g = 0; }
+		else g = g + perturb_g;
+		perturb_b = (int) ( (60) * (float)rand() / RAND_MAX );
+		perturb_b -= 30;
+		if (b + perturb_b > 255) { b = 255; }
+		else if (b + perturb_b < 0) { b = 0; }
+		else b = b + perturb_b;
+		///////////////////////////////////////////////////
+		
+		//pen.CreatePen(PS_SOLID, (int)w, RGB(0, 255, 255));
+		//pen.CreatePen(PS_SOLID, (int)w, RGB(r+perturb_r, g+perturb_g, b+perturb_b));
+		pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+		pOldPen = (CPen *)memDC.SelectObject(&pen);
+
+		grad = gradient[x][y];
+		end_x = st_x = x;	end_y = st_y = y;
+		//////////////////////////////////////////////////////////////////////////////////////
+		// Random Stroke Orientation!!!
+		//perturb = 30. * (float)rand() / RAND_MAX; // 0 < perturb < 30
+		//perturb -= 15; // -15 < perturb < 15
+		//perturb = 90. * (float)rand() / RAND_MAX; // 0 < perturb < 90
+		//perturb -= 45; // -45 < perturb < 45
+		//perturb = perturb / 180 * PI; // turn into radian
+		//theta = (float)(PI / 4.0) + perturb; // 30 degree < theta < 60 degree
+		//perturb = 180. * (float)rand() / RAND_MAX; // 0 < perturb < 180
+		//perturb = perturb / 180 * PI; // turn into radian
+		//theta = (float)perturb; // 0 degree < theta < 180 degree
+		//
+		//if ( x == IMAGE_X-1 || y == IMAGE_Y-1 )
+		//	theta = 45 / 180. * PI; // 45 degree
+		//else if ( image[x+1][y]-image[x][y] == 0 ) 
+		//	theta = 45 / 180. * PI; // 45 degree
+		//else {
+		//	theta = atan( (image[x][y+1]-image[x][y]) / (image[x+1][y]-image[x][y]) );
+		//	theta = theta + PI/2; // 90 degree perpendicular
+		//}
+		
+		///////////////////////////////////////////////////////////////////////////////////////
+		
+		st_x = x - (int)(l*cos(theta)/2); if (st_x < 0) st_x = 0;
+		st_y = y - (int)(l*sin(theta)/2); if (st_y < 0) st_y = 0;
+		end_x = x + (int)(l*cos(theta)/2); if (end_x > IMAGE_X-1) end_x = IMAGE_X-1;
+		end_y = y + (int)(l*sin(theta)/2); if (end_y > IMAGE_Y-1) end_y = IMAGE_Y-1;
+
+		memDC.MoveTo(st_x, IMAGE_Y-1-st_y);
+		memDC.LineTo(end_x, IMAGE_Y-1-end_y);
+	
+		memDC.SelectObject(pOldPen);
+		pen.DeleteObject(); 
+
+		dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+	}
+	//*/
+	double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY); // copy memDC to double_buffer
+
+	//l = 7; // minimum size of the stroke
+	l = 15; // minimum size of the stroke
+	//half = l; // actually, it should bigger than l/1.414
+	half = (int)l/2 + 1; // actually, it should bigger than l/1.414 / 2
+
+	TotalNodes = 0; // the total number of nodes in the heap now
+	max_nodes = 0; // the maximum number of nodes reached during the heap growing and shrinking
+
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++) {
+			r = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 0] - (GLubyte)RGB_GETRED(double_buffer.GetPixel(x, (IMAGE_Y-1-y))) );
+			g = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 1] - (GLubyte)RGB_GETGREEN(double_buffer.GetPixel(x, (IMAGE_Y-1-y))) );
+			b = ABS ( Dbuffer[(y * IMAGE_X + x) * 3 + 2] - (GLubyte)RGB_GETBLUE(double_buffer.GetPixel(x, (IMAGE_Y-1-y))) );
+			tmp_cost = (float) (sqrt((double)3)*255 - dist3(r, g, b)); // sqrt(255*255*255) = sqrt(3)*255
+			if (tmp_cost < 0) tmp_cost = 0.0;
+			item[x][y].cost = tmp_cost;
+			insert_min_heap(&item[x][y]);
+			//in_heap[i][j] = FALSE_;
+		}
+	
+	// put the strokes in ordered fashion
+	while ( !HEAP_EMPTY(TotalNodes) ) {
+		//q = delete_root();
+		/////// Randomly choose any node from the heap
+		no =  (int) ((TotalNodes) * (float)rand() / RAND_MAX ) + 1;
+		//TRACE("TotalNodes = %d, no = %d\n", TotalNodes, no);
+		raise_to_root(no);
+		q = delete_root();
+		//TRACE("q->cost = %f\n", q->cost);
+		//q->expanded = TRUE_;
+		//if ( ABS(255 * sqrt(3) - q->cost) < 5 ) break; // stop the abstraction process
+		//if ( ABS(255 * sqrt(3) - q->cost) < 15 ) break; // stop the abstraction process
+		//if ( ABS(255 * sqrt(3) - q->cost) < 100 ) break; // stop the abstraction process
+		//if ( ABS(255 * sqrt(3) - q->cost) < 20 ) break; // stop the abstraction process
+		if ( ABS(255 * sqrt((double)3) - minHeap[1]->cost) < 20 ) { // the new root
+			//TRACE("I'm getting out!!!\n");
+			break; // stop the abstraction process
+		}
+
+		x = q->coord.x;	y = q->coord.y;
+
+		r = Dbuffer[(y * IMAGE_X + x) * 3 + 0];
+		g = Dbuffer[(y * IMAGE_X + x) * 3 + 1];
+		b = Dbuffer[(y * IMAGE_X + x) * 3 + 2];
+
+		///*
+		////////////////////////////////////////////////////////
+		// Perturb the R, G, B color
+		perturb_r = (int) ( (60) * (float)rand() / RAND_MAX );
+		perturb_r -= 30;
+		if (r + perturb_r > 255) { r = 255; }
+		else if (r + perturb_r < 0) { r = 0; }
+		else r = r + perturb_r;
+		perturb_g = (int) ( (60) * (float)rand() / RAND_MAX );
+		perturb_g -= 30;
+		if (g + perturb_g > 255) { g = 255; }
+		else if (g + perturb_g < 0) { g = 0; }
+		else g = g + perturb_g;
+		perturb_b = (int) ( (60) * (float)rand() / RAND_MAX );
+		perturb_b -= 30;
+		if (b + perturb_b > 255) { b = 255; }
+		else if (b + perturb_b < 0) { b = 0; }
+		else b = b + perturb_b;
+		/////////////////////////////////////////////////////////
+		//*/
+		
+		//pen.CreatePen(PS_SOLID, (int)w, RGB(0, 255, 255));
+		pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+		pOldPen = (CPen *)memDC.SelectObject(&pen);
+
+		grad = gradient[x][y];
+		end_x = st_x = x;	end_y = st_y = y;
+
+		// Stroke clipping
+		while (1) {
+			end_x += 1;	end_y += 1;
+			if (end_x > IMAGE_X-1 || end_y > IMAGE_Y-1) { 
+				end_x -= 1; end_y -= 1;
+				break;
+			}
+			//if (grad > gradient[end_x][end_y] && grad/(float)max_grad > 0.1) {
+			if (grad > gradient[end_x][end_y]) {
+				end_x -= 1; end_y -= 1;
+				break;
+			}
+
+			grad = gradient[end_x][end_y];
+
+			if ( dist2(x, y, end_x, end_y) >= l/2 ) break;
+		}
+		grad = gradient[x][y];
+		while (1) {
+			st_x -= 1;	st_y -= 1;
+			if (st_x < 0 || st_y < 0) { 
+				st_x += 1; st_y += 1;
+				break;
+			}
+			//if (grad > gradient[st_x][st_y] && grad/(float)max_grad > 0.1) {
+			if (grad > gradient[st_x][st_y]) { // old_grad > new_grad 
+				st_x += 1; st_y += 1;
+				break;
+			}
+
+			grad = gradient[st_x][st_y];
+
+			if ( dist2(x, y, st_x, st_y) >= l/2 ) break;
+		}
+		
+		//if ( dist2(x, y, st_x, st_y) >= dist2(x, y, end_x, end_y) ) 
+		//	half = (int) dist2(x, y, st_x, st_y) * 2;
+		//else
+		//	half = (int) dist2(x, y, end_x, end_y) * 2;
+
+		stroke_len = (float)dist2(st_x, st_y, end_x, end_y);
+		
+		//if ( stroke_len > 1) {
+			memDC.MoveTo(st_x, IMAGE_Y-1-st_y);
+			memDC.LineTo(end_x, IMAGE_Y-1-end_y);
+		//}
+	
+		memDC.SelectObject(pOldPen);
+		pen.DeleteObject(); 
+
+		//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+		diff_old = diff_new = 0;
+
+		// Compare the old difference and the new difference in local mask
+		for (j = -half; j <= half; j++) {
+			for (i = -half; i <= half; i++) {
+				if (x+i < 0 || x+i > IMAGE_X-1 || y+j < 0 || y+j > IMAGE_Y-1) {
+					continue;
+				}
+				if ( memDC.GetPixel((x+i), (IMAGE_Y-1-(y+j))) == double_buffer.GetPixel((x+i), (IMAGE_Y-1-(y+j))) ) {
+					// exactly the same color. the new stroke hasn't touched this pixel
+					continue;
+				}
+							
+				r = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 0] - (GLubyte)RGB_GETRED(memDC.GetPixel((x+i), (IMAGE_Y-1-(y+j)))) );
+				g = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 1] - (GLubyte)RGB_GETGREEN(memDC.GetPixel((x+i), (IMAGE_Y-1-(y+j)))) );
+				b = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 2] - (GLubyte)RGB_GETBLUE(memDC.GetPixel((x+i), (IMAGE_Y-1-(y+j)))) );
+				diff_new += (float)dist3(r, g, b);
+
+				r = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 0] - (GLubyte)RGB_GETRED(double_buffer.GetPixel((x+i), (IMAGE_Y-1-(y+j)))) );
+				g = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 1] - (GLubyte)RGB_GETGREEN(double_buffer.GetPixel((x+i), (IMAGE_Y-1-(y+j)))) );
+				b = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 2] - (GLubyte)RGB_GETBLUE(double_buffer.GetPixel((x+i), (IMAGE_Y-1-(y+j)))) );
+				diff_old += (float)dist3(r, g, b);
+			}
+		}
+		
+		if (diff_new < diff_old)  { // there has been improvement
+			stroke_count++;
+			// Update the min heap
+			for (j = -half; j <= half; j++) {
+				for (i = -half; i <= half; i++) {
+					if (x+i < 0 || x+i > IMAGE_X-1 || y+j < 0 || y+j > IMAGE_Y-1) {
+						continue;
+					}
+					if ( memDC.GetPixel((x+i), (IMAGE_Y-1-(y+j))) == double_buffer.GetPixel((x+i), (IMAGE_Y-1-(y+j))) ) {
+						// exactly the same color. the new stroke hasn't touched this pixel
+						continue;
+					}
+					/////////////////////////////////////////////////////
+					// The pixels that has been touched by the new stroke
+					//
+					//value += image[x+i][y+j];
+					//count++;
+					p = &item[x+i][y+j];	// current neighbor node 
+					//if( r->expanded == TRUE_ ) continue; 
+					
+					//tmp_cost = (float)(q->cost + fG2All(q, r));
+					r = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 0] - (GLubyte)RGB_GETRED(memDC.GetPixel((x+i), IMAGE_Y-1-(y+j))) );
+					g = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 1] - (GLubyte)RGB_GETGREEN(memDC.GetPixel((x+i), IMAGE_Y-1-(y+j))) );
+					b = ABS ( Dbuffer[((y+j) * IMAGE_X + (x+i)) * 3 + 2] - (GLubyte)RGB_GETBLUE(memDC.GetPixel((x+i), IMAGE_Y-1-(y+j))) );
+					//diff = (float)dist3(r, g, b);
+					tmp_cost = (float) (sqrt((double)3)*255 - dist3(r, g, b));
+					if (tmp_cost < 0) tmp_cost = 0.0;
+					//tmp_cost = (float)diff;
+
+					//if ( in_heap[r->coord.x][r->coord.y] && tmp_cost < r->cost ) 
+					if ( in_heap[p->coord.x][p->coord.y] && tmp_cost > p->cost ) // difference got smaller
+						delete_item(p->no_in_heap);
+
+					if ( ! in_heap[p->coord.x][p->coord.y] ) {
+						p->cost = tmp_cost;
+						//r->next.x = q->coord.x;
+						//r->next.y = q->coord.y;
+
+						insert_min_heap(p);
+					}
+				}
+			}
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY); // copy memDC to double_buffer
+			fail_count = 0; // reinitialized
+		
+		}
+		else { // there is no improvement
+			//delete_item(q->no_in_heap); // it's already out of the min heap (delete root)
+			fail_count++;
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY); // copy double_buffer back to memDC
+			r = Dbuffer[(y * IMAGE_X + x) * 3 + 0];
+			g = Dbuffer[(y * IMAGE_X + x) * 3 + 1];
+			b = Dbuffer[(y * IMAGE_X + x) * 3 + 2];
+			//memDC.SetPixelV(x, (IMAGE_Y-1)-y, RGB(r, g, b)); // set the pixel color with the original color in the input image
+		}
+		
+		dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				
+		//if (fail_count > 30) break; // get out of the while loop
+		
+	}	// end of while 
+	
+	TRACE("End of Random Gradient-based Stroke placement\n");
+	TRACE("stroke_count = %d\n", stroke_count);
+
+	//////////////////////////////////////////////////////////////
+	// Copy double_buffer to Dbuffer
+	for (y = 0; y < IMAGE_Y; y++) {
+		for (x = 0; x < IMAGE_X; x++) {
+			r = (GLubyte)RGB_GETRED(double_buffer.GetPixel(x, y));
+			g = (GLubyte)RGB_GETGREEN(double_buffer.GetPixel(x, y));
+			b = (GLubyte)RGB_GETBLUE(double_buffer.GetPixel(x, y));
+			Dbuffer[((IMAGE_Y-1-y) * IMAGE_X + x) * 3 + 0] = r;
+			Dbuffer[((IMAGE_Y-1-y) * IMAGE_X + x) * 3 + 1] = g;
+			Dbuffer[((IMAGE_Y-1-y) * IMAGE_X + x) * 3 + 2] = b;
+		}
+	}
+	
+}
+
+//////////////////////////////////////////////////////////////
+// For Intelligent Pen
+void DrawIPenCumulativeMRSampledEdgeMemDC(CDC *dc, IPen* ip, int pc, int mode, int r, int g, int b)
+{
+	for (int k = 0; k < pc; k++)	{
+		for (int i = 0; i <= ip[k].cc; i++) {
+			ip[k].curve[i].DrawCurve(dc, r, g, b);
+		}
+	}
+	if (mode == 0) { // draw the current pen stroke completely
+		for (int i = 0; i <= ip[k].cc; i++) {
+			ip[k].curve[i].DrawCurve(dc, r, g, b);
+		}
+	}
+	else { // draw the current pen stroke up to the previous segments
+		for (int i = 0; i <= ip[k].cc-1; i++) {
+			ip[k].curve[i].DrawCurve(dc, r, g, b);
+		}
+	}
+}
+
+void FindCurve(IPen* ip, int pc, PixeL free, int& min_ip, int& min_curve)
+{
+	double min_dist = 100000000;
+	double dist;
+	int i, j, k;
+	int	min_curve_no = -1;
+	int min_ip_no = -1;
+	int flag = 0;
+
+	//TRACE("pc = %d\n", pc);
+	//TRACE("ip[0].cc = %d\n", ip[0].cc);
+	for (k = 0; k <= pc; k++)	{ // pc: pen count (total number of pen strokes)
+		for (i = 0; i <= ip[k].cc; i++) {
+			//ip[k].curve[i].DrawCurve(dc, r, g, b);
+			//ip[k].curve[i].DrawCurve(dc, r, g, b);
+			//TRACE("k = %d, i = %d\n", k, i);
+			for (j = 0; j < (signed)ip[k].curve[i].pnts.size(); j++) {
+				dist = dist2(free.x, IMAGE_Y-1-free.y, ip[k].curve[i].pnts[j].x, ip[k].curve[i].pnts[j].y);
+				//TRACE("k = %d, i = %d, j = %d\n", k, i, j);
+				if (dist < min_dist) {
+                    min_dist = dist;
+					min_ip_no = k;
+					min_curve_no = i;
+				}
+			}
+		}
+	}
+	//TRACE("min_ip_no = %d\n", min_ip_no);
+	//TRACE("min_curve_no = %d\n", min_curve_no);
+	min_ip = min_ip_no;
+	min_curve = min_curve_no;
+}
+
+
+void ClearAllImagesDepthFirst(int x, int y)
+{
+	if (x > IMAGE_X-1 || x < 0 || y > IMAGE_Y-1 || y < 0)
+		return;
+
+	if (pxl_cost[x][y] == MAX_COST) 
+		return;
+	else {
+		// Clear cost maps
+		pxl_cost[x][y] = MAX_COST;
+		next_pxl[x][y][0] = x;	next_pxl[x][y][1] = y;
+		boundary[x][y] = 0;
+		tmp_img[x][y] = 0;
+		boundary2[x][y] = 0;
+		
+		// Go recursively
+					
+		ClearAllImagesDepthFirst(x+1, y);
+		ClearAllImagesDepthFirst(x-1, y);
+		ClearAllImagesDepthFirst(x, y+1);
+		ClearAllImagesDepthFirst(x, y-1);
+	}
+
+}
+
+
+

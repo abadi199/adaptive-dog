@@ -1,0 +1,32 @@
+% -*- Mode:TeX -*-
+%% The documentstyle options along with the pagestyle can be used to generate
+%% a technical report, a draft copy, or a regular thesis.  You may need to
+%% re-specify the pagestyle after you \include  cover.tex.  For more
+%% information, see the first few lines of mitthesis.sty. 
+\documentstyle[12pt,vi,graphicx,pst-func, pstricks,subfigure, float]{modmitthesis}
+
+%%\documentclass[12pt,vi]{mitthesis}
+\pagestyle{plain}
+
+%% This bit allows you to either specify only the files which you wish to
+%% process, or `all' to process all files which you \include.
+%% Krishna Sethuraman (1990).
+%\typein [\files]{Enter file names to process, (chap1,chap2 ...), or `all' to
+%process all files:}
+%\def\all{all}
+%\ifx\files\all \typeout{Including all files.} \else \typeout{Including only \files.} \includeonly{\files} \fi
+\begin{document}
+
+\include{cover}
+
+\pagestyle{plain}
+
+\tableofcontents 
+%\newpage
+\listoffigures
+%\newpage \leavevmode 
+%\newpage
+
+\include{thesis}
+
+\end{document}

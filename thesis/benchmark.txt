@@ -1,0 +1,13 @@
+Gradient execution time: 9985
+GetPolarity execution time: 2484
+GetDoGLIC3 execution time: 3360
+OnEdgeAdaptive execution time: 18235
+
+OnEdgeDoG execution time: 3859
+OnEdgeCld execution time: 4578
+
+
+Gradient execution time: 344
+GetPolarity execution time: 1344
+GetDoGLIC3 execution time: 3390
+OnEdgeAdaptive execution time: 7797

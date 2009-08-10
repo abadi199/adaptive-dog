@@ -1,0 +1,708 @@
+%!TEX root = main.tex
+\chapter{Introduction}
+
+Several quantum mechanical phenomena can be described in terms of simple
+harmonic \textbf{oscillators} modified by the inclusion of linear friction.  For
+example, deep inelastic scattering and field-theoretic formulations of
+fundamental anyons can be so modelled.  It has recently been shown \cite{mf:mtp}
+that squeezed light entering quantum optics can be statewise identified up to
+automorphisms with damped simple harmonic oscillators.  An understanding of 
+such oscillators is therefore of use.
+
+The frictionally damped simple harmonic oscillator can be expressed in a
+Lagrangian formulation only with the addition of a second variable of motion.
+A suitable Lagrangian is known to be \cite{mf:mtp} 
+
+\begin{equation}
+L = m \dot{x} \dot{y} + \frac{R}{2} (x \dot{y} - \dot{x} y) - k x y
+\end{equation}
+
+where $R$ characterizes the strength of the friction.  Canonical momenta and
+a Hamiltonian can be obtained in the usual manner and canonical quantization
+carried out.  Feshbach and Tikochinsky have shown \cite{ft:fest} that the 
+eigenvalues of the resulting Hamiltonian are
+
+\begin{equation}
+H = \hbar \Omega (n_{A} - n_{B}) \pm \frac{i \hbar R}{2 m} (n_{A} + n_{B} + 1)
+\end{equation}
+
+where $\Omega^{2} \equiv \frac{k}{m} - \frac{R^{2}}{4 m^{2}}$ and $n_{A}$ and
+$n_{B}$ range over the nonnegative integers.  The complexity of the eigenvalues
+is expected, being characteristic of nonconservative systems, and causes no
+difficulties in nonstatistical questions.
+
+Problems arise when an attempt is made to model the behavior of an ensemble
+of these oscillators.  A first attempt follows the normal procedure, used for
+conservative systems (in which the Hamiltonian is equivalent to the energy),
+to calculate the partition function for a canonical formulation as
+
+\begin{equation}
+Z = \Sigma e^{- \beta H}
+\end{equation}
+
+where $H$ ranges over the Hamiltonian eigenvalues; such quantities as
+temperature, internal energy, and entropy are determined from the form of $Z$.
+
+Two difficulties are immediately apparent.  The first is that the real part of
+the Hamiltonian eigenvalues has no lower bound, as $n_{A}$ can be held fixed
+while $n_{B}$ ranges indefinitely upwards, and so the partition function sum
+diverges.  The second is that even if some cutoff is made, $Z$ is no longer
+positive definite, since $e^{- \beta H}$ can be negative for complex $H$
+(its reality is assured, since the sum includes the complex conjugate of
+each of its summands).
+
+The problem is, simply, to find some suitable method of applying canonical 
+statistics to such ensembles, and then to reach an understanding of any unusual
+features in the thus-calculated quantities --- for instance, it appears
+possible that complexity will enter such things as the entropy, possibly
+indicating some sort of time evolution.  
+
+I shall give a set of criteria for a solution.  I shall then go over several
+of the approaches we took, giving motivations and results of
+each.  Finally, I shall present a solution in which the reasons for using
+Hamiltonian eigenvalues at all are examined and found wanting, motivating the
+use of energy eigenvalues instead.
+
+\newpage
+\chapter{Criteria}
+
+An acceptable solution must yield approximately as much information about
+ensembles of the damped oscillators as normal methods do about ensembles of
+undamped oscillators.  It must allow us to calculate thermodynamic quantities
+such as temperature, entropy, and energy.  However, it is acceptable that
+it do so only with the aid of approximations.  
+
+In the $R = 0$ (no damping) case, a solution must yield the same results as
+those already known for the undamped situation.  Further, we expect that the
+results for small $R$ be close to these.  More generally, the derived
+quantities should be continuous functions of $R$.
+
+The latter criterion is only a fragment of a larger one, namely that the
+derived quantities must make sense.  All differences between the damped and
+undamped cases must be explained.  It is especially important that there be
+plausible physical and mathematical interpretations of any oddities that may
+appear in such quantities, such as complexity.  
+
+Finally, the derivation of the solution must itself be plausibly justifiable
+on both physical and mathematical grounds.
+
+\newpage
+\chapter{Attempts}
+
+\section{Separating the Hamiltonian}
+
+\subsection{Motivation}
+
+We observe that the eigenvalues of the Hamiltonian can be rewritten as
+
+\begin{equation}
+H = (\hbar \Omega \pm \frac{i \hbar R}{2 m}) n_{A} -
+    (\hbar \Omega \mp \frac{i \hbar R}{2 m}) n_{B}.
+\end{equation}
+
+Since this is linear in $n_{A}$ and $n_{B}$, it suggests that the Hamiltonian
+may also separate, as $H = H_{A} - H_{B}$.  An appealing symmetry leads us
+to define
+
+\begin{equation}
+\alpha \equiv \Omega \pm \frac{i R}{2 m} \equiv \omega e^{i \theta}
+\end{equation}
+
+where
+
+\begin{equation}
+\theta \equiv \pm \arctan \frac{R}{2 m \Omega}
+\end{equation}
+
+so that we may write the decoupled eigenvalues as
+
+\begin{equation}
+H_{A} = \hbar \alpha (n_{A} + \frac{1}{2}), \hspace{1cm}
+	H_{B} = \hbar \alpha^{*} (n_{B} + \frac{1}{2})
+\end{equation}
+
+for each sign of $\theta$,
+so that each looks like the spectrum for an undamped SHO, rotated in the
+complex plane, and the zero-point energies have appeared.  Interpreting the
+Hamiltonian eigenvalues as the difference of two more normal spectra gives
+a reason for the lack of a zero-point value; there are two, which cancel.
+
+While this does not logically imply that the Hamiltonian {\em operator} will
+separate into two parts, it makes it plausible.  We therefore seek a 
+transformation that will yield a Hamiltonian with no explicit coupling term.
+If we find such a Hamiltonian, we can be sure that we can treat the system
+as two separate systems.
+
+\subsection{Attempts}
+
+The obvious transformation is
+$u \equiv \frac{x + y}{\sqrt{2}}, v \equiv \frac{x - y}{\sqrt{2}}$
+which suggests itself as a way to decouple the $p_{x}p_{y}$ and $xy$ terms.
+This yields 
+
+\begin{equation}
+L = \frac{m}{2} (\dot{u}^2 - \dot{v}^2) + \frac{R}{2} (\dot{u} v - u \dot{v})
+	- \frac{k}{2} (u^2 - v^2),
+\end{equation}
+\begin{equation}
+H = \frac{p_{u}^2}{2 m} - \frac{p_{v}^2}{2 m} + 
+	\frac{R}{2 m}(u p_{v} - v p_{u}) + \frac{m \Omega^2 u^2}{2} - 
+	\frac{m \Omega^2 v^2}{2}
+\end{equation}
+
+which are decoupled for the $R = 0$ case only.  In this case the system 
+presents itself as the difference of two SHOs; letting $v \Rightarrow i v$, 
+it becomes a sum.
+Although it was not expected to achieve separation, we then looked at the
+further ``angular'' transform $u = \rho cos \theta, v = \rho sin \theta$.  
+This yields
+
+\begin{equation}
+L = \frac{m}{2} \dot{\rho}^2 + \frac{m \dot{\theta}^2 - i R \dot{\theta}
+	- k}{2} \rho^2,
+\end{equation}
+\begin{equation}
+H = \frac{3 p_{\theta}^2}{2 m \rho^2} + \frac{p_{\rho}^2}{2 m} 
+	+ \frac{i R p_{\theta}}{2 m} - \frac{m \Omega^2 \rho^2}{2}
+\end{equation}
+
+which bear the expected resemblance to the normal angular form of the
+two-dimensional SHO.  While this form allows the separation $\psi(\rho, \theta)
+= F(\rho) e^{i \lambda \theta}$, the Hamiltonian does not separate into 
+$H_{\rho} + H_{\theta}$.
+
+It should be noted that any quantization undertaken after letting 
+$v \Rightarrow i v$ is suspect, as the change in reality of variables 
+necessarily corresponds to a change in which variables are observable and
+which nonphysical.  In particular, the calculation of the eigenvalues of
+the number operators as the whole numbers depends on the creation and
+destruction operators being adjoint, so that $<\psi| N |\psi>$ has a positivity
+requirement; the loss of the reality of $x$ and $y$ destroys this.  In fact,
+if quantization is carried out on the $uv$ system after $v \Rightarrow i v$
+(meaning that $u$ and $v$ are real, since they are being quantized, and that
+therefore $x$ and $y$ are complex and conjugate to each other), the 
+eigenvalues of the number operator taken from $x$ and $y$ become the 
+nonpositive integers.  The eigenstates of the Hamiltonian therefore change;
+what previously formed the eigenstates are now unphysical.  This may or may
+not be damaging, but it shows that care must be taken with such operations.
+
+\newcommand{\qp}{\mbox{$q_{+}$}}
+\newcommand{\qm}{\mbox{$q_{-}$}}
+\newcommand{\uv}{\mbox{$q_{\pm}$}}
+\newcommand{\vu}{\mbox{$q_{\mp}$}}
+\newcommand{\xu}{\mbox{$\frac{\partial x}{\partial \qp}$}}
+\newcommand{\xv}{\mbox{$\frac{\partial x}{\partial \qm}$}}
+\newcommand{\xuv}{\mbox{$\frac{\partial x}{\partial \uv}$}}
+\newcommand{\xvu}{\mbox{$\frac{\partial x}{\partial \vu}$}}
+\newcommand{\ddx}{\mbox{$\frac{\partial^2 x}{\partial \qp \partial \qm}$}}
+\newcommand{\ddy}{\mbox{$\frac{\partial^2 y}{\partial \qp \partial \qm}$}}
+\newcommand{\yu}{\mbox{$\frac{\partial y}{\partial \qp}$}}
+\newcommand{\yv}{\mbox{$\frac{\partial y}{\partial \qm}$}}
+\newcommand{\yuv}{\mbox{$\frac{\partial y}{\partial \uv}$}}
+\newcommand{\yvu}{\mbox{$\frac{\partial y}{\partial \vu}$}}
+\newcommand{\ux}{\mbox{$\frac{\partial \qp}{\partial x}$}}
+\newcommand{\uy}{\mbox{$\frac{\partial \qp}{\partial y}$}}
+\newcommand{\vx}{\mbox{$\frac{\partial \qm}{\partial x}$}}
+\newcommand{\vy}{\mbox{$\frac{\partial \qm}{\partial y}$}}
+\newcommand{\uvx}{\mbox{$\frac{\partial \uv}{\partial x}$}}
+\newcommand{\uvy}{\mbox{$\frac{\partial \uv}{\partial y}$}}
+\newcommand{\ud}{\mbox{$\dot{\qp}$}}
+\newcommand{\vd}{\mbox{$\dot{\qm}$}}
+\newcommand{\uvd}{\mbox{$\dot{\uv}$}}
+\newcommand{\pu}{\mbox{$p_{+}$}}
+\newcommand{\pv}{\mbox{$p_{-}$}}
+\newcommand{\puv}{\mbox{$p_{\pm}$}}
+
+The form of the Hamiltonian eigenvalue spectrum leaves us still optimistic
+that separating the Hamiltonian into $H_{A} - H_{B}$
+is possible.  However, we discovered that
+no point transformation can accomplish this.  Consider an arbitrary 
+reversible point transformation $\qp = \qp(x, y), \qm = \qm(x, y),
+x = x(\qp, \qm), y = y(\qp, \qm).$  The Lagrangian becomes
+
+\begin{equation}
+L = m (\xu \ud + \xv \vd)(\yu \ud + \yv \vd) + \frac{R}{2} (x (\yu \ud +
+	\yv \vd) - y (\xu \ud + \xv \vd)) - k x y
+\end{equation}
+
+from which we get
+
+\begin{equation}
+\puv \equiv \frac{\partial L}{\partial \uv} = 2 m \xuv \yuv \uvd +
+	\frac{R}{2} (x \yuv - y \xuv)
+\end{equation}
+
+and 
+
+\begin{equation}
+H = \frac{p^{2}_{+}}{4 m} \ux \uy + \frac{R}{4 m} (y \uy - x \ux) \pu
+	+ \frac{p^{2}_{-}}{4 m} \vx \vy + \frac{R}{4 m} (y \vy - x \vx) \pv
+	+ m \Omega^2 x y.
+\end{equation}
+
+Necessary and sufficient conditions for $H$ to separate into $H_{+} + H_{-}$
+are therefore that $\uvx \uvy$ and $y \uvy - x \uvx$ are functions of
+$\uv$ only (keeping the signs consistent), and that $xy$ be the sum of a 
+function of $\qp$ only and a function of $\qm$ only.  In exact form, these
+conditions become
+
+\begin{equation}
+\yuv \ddx + \xuv \ddy = 0, \label{eq:ab}
+\end{equation}
+\begin{equation}
+(x \ddx - \xu \xv) (\yuv)^2 - (y \ddy - \yu \yv) (\xuv)^2 = 0,\label{eq:cd}
+\end{equation}
+\begin{equation}
+y \ddx + x \ddy = 0.
+\end{equation}
+
+From eq.s~\ref{eq:ab} we see that since 
+$\ddx = - \frac{\xuv}{\yuv} \ddy$ for both sign choices, either 
+$\frac{\xu}{\yu} = \frac{\xv}{\yv}$ or $\ddy = \ddx = 0$.  In the latter
+case eq.s~\ref{eq:cd} become
+
+\begin{equation}
+\yuv \yvu (\xuv)^2 - \xuv \xvu (\yuv)^2 = 0
+\end{equation}
+
+which we can divide through by $\yuv \xuv$ to show that
+
+\begin{equation}
+\xu \yv = \xv \yu.
+\end{equation}
+
+Therefore we see that separation of the Hamiltonian requires that
+$\xu \yv = \xv \yu$.  Since $\xu \yv + \xv \yu$ is identically zero,
+this requirement means that $\xu \yv = \xv \yu = 0$.  This, in turn, means 
+that either
+$\xu = \xv = 0$, in which case $x$ is trivial; $\yv = \yu = 0$, in which
+case $y$ is trivial; or $\xuv = \yuv = 0$ for one sign, in which case 
+$\uv$ drops out of the equations for $x(\qp, \qm), y(\qp, \qm)$.  
+Since any of these would make the transformation $x, y
+\Rightarrow \qp, \qm$
+irreversible, we see that no point transform will achieve separation of the
+Hamiltonian.
+
+\section{Recoupling the Hamiltonian}
+
+\subsection{Motivation}
+
+As noted above, the form of the Hamiltonian spectrum suggests that it is
+composed of two coupled parts.  If we take this as given, even without
+explicitly separating the Hamiltonian operator, we may suppose that the
+minus sign between the parts is indicative only of the form of the coupling
+and is not important to the statistics of the system.  If so, we can recouple
+the Hamiltonian as $H = H_{A} + H_{B}$, yielding values
+
+\begin{equation}
+H = \hbar \Omega (n_{A} + n_{B} + 1) \pm \frac{i \hbar R}{2 m} (n_{A} - n_{B})
+\end{equation}
+
+The problem of the immediate divergence of $Z$ is now solved, since $(n_{A} +
+n_{B} + 1)$ {\em does} have a lower limit, and the unbounded $(n_{A} - n_{B})$
+is now safely imaginary.
+
+Continuing to use subsystems $A$ and $B$, we see
+that $Z$ is the product of $Z_{A}$ and $Z_{B}$.  Further, $Z_{A} = Z_{B}^{*}$
+and so $Z = |Z_{A}|^{2}$.  Reflecting that the variable $y$ is fictitious, we
+may further suppose that this partition function is too large by a power of
+two, and therefore use $Z = |Z_{A}| = |Z_{B}|$ only.  (This change is minor,
+being equivalent to halving the number of particles in the ensemble, and so
+not changing any dependencies.)  It now appears that the effect of the damping,
+statistically, is to rotate the undamped spectrum in the complex plane, use
+the rotated values in the partition function, and then rotate back (not by
+the same amount) to the real axis.  This has a certain intuitive appeal.
+
+\subsection{Discussion}
+
+The first quantity calculated from $Z$ is the internal energy, $E = -
+\frac{d}{d \beta} ln Z$.  We immediately encounter trouble:  for certain
+combinations of the parameters, $E < 0$.  Since the real part of the recoupled
+Hamiltonian is positive for each particle, this seems odd.  An explanation is
+found in the fractional occupation numbers for the states $k$,
+$\frac{e^{- \beta H_{k}}}{Z}$.  The problem is immediately apparent; while
+we have arranged for $Z$ to be convergent, real, and positive, the numerator
+ranges over the complex plane.  For $H_{k}$ with imaginary parts of appropriate
+magnitude, the fractional occupation is negative; rarely is it purely real.
+Most $k$ will have complex occupation numbers.
+
+The meaning of the imaginary part of a complex occupation number could perhaps
+be sought in a Fourier transformation with time.  However, no such option is
+readily available for the purely negative occupation numbers.  This problem
+was left open-ended; the recoupling idea was found to be useful in several
+of our other attempts.
+
+\section{Restricting the Ensemble}
+
+\subsection{Motivation}
+
+Because the $y$ dimension is spurious, it seems reasonable to attempt to
+eliminate it before doing statistics.  The possible evolutions in $y$-space
+are the time-reverse motions of $x$-space.  In fact, the $y$ variable could
+be eliminated from the Lagrangian formulation by relying directly on the
+action principle.  Instead of using a monogenic Lagrangian as the integrand,
+we write $x$ as $x(t)$ and $y$ as $x(-t)$.  This, however, does not lend
+itself to Hamiltonian reformulation.  It may indicate that the $x$ and $y$
+variables should not be considered as independent as they seem.  One possible
+way to eliminate this dependence, in ensembles, is to require that a particle
+can be present in a state only if another particle is present in the
+time-reversed state, that is, the state with the conjugate eigenvalue.  As this
+is simply a restriction on the initial conditions of the system, it is 
+perfectly compatible with the Lagrange variational principle.
+
+\subsection{Results}
+
+With this pairing of particles with their time-reverses requirement, it seems 
+reasonable to use the sums of the eigenvalues
+of the paired particles in the partition function, since the pairs are now
+the fundamental unit.  The imaginary parts now simply vanish.  Up to a
+few factors of 2, we are left with exactly the statistics of the undamped
+oscillator except that $\omega$ is replaced with $\Omega.$  We are now assured
+that, at least in the underdamped case, all thermodynamic variables will be
+as accessible and meaningful as in the undamped case.  The overdamped and
+critically damped cases require further analysis, as some quantities take on
+strange values for the former and diverge for the latter.  Our attention is
+focused on the underdamped case.
+
+A slightly different path to this result takes the time-reverse symmetry
+as requiring that $n_{A} = n_{B}$.  If this restriction is performed only
+after recoupling the Hamiltonian, the eigenvalues become, as above, those
+of the undamped oscillator with $\omega \Rightarrow \Omega$ with but a
+single unwanted factor of 2.  (The previous restriction is the same as
+recoupling the Hamiltonian and then requiring that if $(n_{A}, n_{B})$ is
+present so is $(n_{B}, n_{A})$.)
+
+\subsection{Discussion}
+
+Elegant though this solution may be, it still has several problems.
+First, no way has been found to mathematically verify the
+assertions regarding time-reverse linkage with conjugate eigenvalues.
+Second, it is unclear that the proper weights for pairs of particles in the
+partition function are the sums of the particles' weights, even should the
+pairing be accomplished.  Third, it is only somewhat physically plausible
+that the effect of the damping should be, statistically, to make the
+oscillators act as if they had smaller energy quanta.  Further investigation
+may provide answers to these questions.
+
+During the tail end of the research we encountered the preprint \cite{action}
+in which the action for the damped SHO is calculated.  Of interest to us are
+the final results of the real and imaginary parts of the action as
+
+\begin{equation}
+{\cal R}e {\cal A}[x, y] = \int^{t_{f}}_{t_{i}} dt {\cal L},
+\end{equation}
+\begin{equation}
+{\cal L} = \mu \dot{x} \dot{y} - [V(x + \frac{1}{2} y) - V(x - \frac{1}{2} y)]
+	+ \frac{1}{2}[x F^{ret}_{y} + y F^{adv}_{x}],
+\end{equation}
+\begin{equation}
+{\cal I}m {\cal A}[x, y] = \frac{1}{2 \hbar} \int^{t_{f}}_{t_{i}} 
+	\int^{t_{f}}_{t_{i}} dt ds N(t - s) y(t) y(s)
+\end{equation}
+
+(\cite{action}, eq. 30).  In particular, the authors note that ``The classical
+constraint $y = 0$ occurs because nonzero $y$ yields an `unlikely process' in
+view of the large imaginary part of the action (in the classical `$\hbar 
+\Rightarrow 0$' limit) implicit in [the above equations]'' (\cite{action} p10).
+While this restriction does not directly obtain in the quantum level, any
+restriction that {\em is} imposed on the quantum ensemble must be, when the 
+ensemble is taken to the classical $\hbar \Rightarrow 0$ limit, compatible
+with this $y = 0$ restriction.  This should be kept in mind in any further
+exploration of this approach.
+
+\section{Studying Time Evolution}
+
+It was thought that knowledge of the exact time evolution of the Heisenberg
+operators might be useful in inspiring an interpretation of the system.
+
+As stated in \cite{ft:fest}, the metric of the system must be altered so that
+time-reverse replaces adjoint in order to achieve normalizability.  We
+therefore have the Schr\"odinger equations
+
+\begin{equation}
+i \hbar \frac{d |\psi(t)>}{d t} = H \psi(t), \hspace{1cm} i \hbar \frac{d <\psi^{T}|}{d t} =
+	<\psi^{T}| H^{T}
+\end{equation}
+
+with which we can derive the Heisenberg equation of motion by examining the
+expectation value of an operator with no explicit time dependance in
+the usual fashion.
+
+Having thus justified use of the usual Heisenberg equation of motion, we find
+the fundamental operators to evolve as
+
+\begin{equation}
+\dot{A} = \frac{1}{i \hbar} [A, H] = - i \Omega A + \frac{R}{2 m} B^{\dagger},
+\hspace{1cm}
+\dot{B} = \frac{1}{i \hbar} [B, H] = i \Omega B + \frac{R}{2 m} A^{\dagger}.
+\end{equation}
+
+These coupled equations are easily solved to yield
+
+\begin{equation}
+A = (A_{0} cosh\frac{R t}{2 m} + B_{0}^{\dagger} sinh\frac{R t}{2 m}) e^{- i
+        \Omega t},
+\hspace{1cm}
+B = (B_{0} cosh\frac{R t}{2 m} + A_{0}^{\dagger} sinh\frac{R t}{2 m}) e^{i
+        \Omega t},
+\end{equation}
+
+from which we directly verify that the CCR  $[A, B] = 0$ and
+$[A, A^{\dagger}] = [B, B^{\dagger}] = 1$ hold true at all time $t$.
+Backtracking to the original creation and destruction operators for
+$x, p_{x}$ and $y, p_{y}$ via the definitions $A = \frac{a + b}{\sqrt{2}},
+B = \frac{a - b}{\sqrt{2}}$ yields
+
+\begin{equation}
+a = (a_{0} cosh\frac{R t}{2 m} + a_{0}^{\dagger} sinh\frac{R t}{2 m}) 
+	cos \Omega t - i (b_{0} cosh\frac{R t}{2 m} - b_{0}^{\dagger}
+	sinh \frac{R t}{2 m}) sin \Omega t,
+\end{equation}
+\begin{equation}
+b = (b_{0} cosh\frac{R t}{2 m} - b_{0}^{\dagger} sinh\frac{R t}{2 m})
+	cos \Omega t - i (a_{0} cosh\frac{R t}{2 m} + a_{0}^{\dagger}
+	sinh\frac{R t}{2 m}) sin \Omega t
+\end{equation}
+
+which we substitute into $a = \frac{1}{\sqrt{2 \hbar \Omega}} (\frac{p_{x}}
+{\sqrt{m}} - i \sqrt{m} \Omega x), \hspace{.25cm} b =  \frac{1}{\sqrt{2 \hbar
+\Omega}} (\frac{p_{y}}{\sqrt{m}} - i \sqrt{m} \Omega y)$ to obtain our 
+final results
+
+\begin{equation}
+x(t) = (x(0) cos\Omega t + \frac{1}{m \Omega} p_{y}(0) sin\Omega t)
+        e^{- \frac{R t}{2 m}}
+\end{equation}
+\begin{equation}
+p_{x}(t) = (p_{x}(0) cos\Omega t - m \Omega y(0) sin\Omega t)
+        e^{\frac{R t}{2 m}}
+\end{equation}
+\begin{equation}
+y(t) = (y(0) cos\Omega t + \frac{1}{m \Omega} p_{x}(0) sin\Omega t)
+        e^{\frac{R t}{2 m}}
+\end{equation}
+\begin{equation}
+p_{y}(t) = (p_{y}(0) cos\Omega t - m \Omega x(0) sin\Omega t)
+        e^{- \frac{R t}{2 m}}
+\end{equation}
+
+which have reasonable forms given the nature of this system.  This information
+proved useful in subsequent calculations.
+
+\section{Studying Correlations}
+
+The correlation functions were defined as
+
+\begin{equation}
+corr(\Theta) = \frac{<\psi | \Theta(0) \Theta(t) | \psi> - 
+	<\psi | \Theta(0) | \psi><\psi | \Theta(t) | \psi>}
+	{<\psi | \Theta^{2}(0) | \psi>}
+\end{equation}
+
+where $|\psi>$ is a stationary state,
+so that for the normal formalism of the undamped simple harmonic oscillator
+we have the usual
+
+\begin{equation}
+corr(p) = cos \omega t + \frac{i sin \omega t}{2 n + 1}.
+\end{equation}
+
+Using the equations of motion given above, the correlations become
+
+\begin{equation}
+corr(p_{x}) = e^{\frac{R t}{2 m}} cos\Omega t,
+\hspace{.5cm}
+corr(p_{y}) = e^{-\frac{R t}{2 m}} cos\Omega t,
+\hspace{1cm}
+corr(\vec{p}) = 2 cosh\frac{R t}{2 m} cos\Omega t.
+\end{equation}
+
+The only apparent characteristic of interest of these equations is that while
+as $R \Rightarrow 0$ they become the real part of the usual undamped
+correlation, they continue to lack any imaginary part.  This is somewhat
+intriguing, especially since the interpretation of imaginary quantities as
+Fourier-transformed time evolution would require the complexity to be present
+only in the damped case rather than only in the undamped case, rather than
+the reverse.  
+
+It is quite possible that the imaginary part is simply
+an artifact of the Lagrangian form and has no physical significance.  It is
+more likely to be related to the zero-point energy, especially since in the
+classical limit $n \Rightarrow \infty$ it vanishes; if this is the case then
+its lack is probably due to the zero-point contributions of the two decoupled
+systems cancelling in the difference system.
+
+\newpage
+\chapter{Solution:  Discarding the Hamiltonian}
+
+\section{Motivation}
+
+Examination of \cite{ft:fest} reveals a small error in terminology:  the
+Hamiltonian is identified with the energy.  While this identification is of
+course valid in most (i.e. conservative) systems, it fails for nonconservative
+systems such as the damped SHO.  In fact, looking more closely, we realize
+that since the Lagrangian was not derived as $T - V$ but simply as an
+expression that gives the desired equation of motion, there is no reason to
+believe the derived Hamiltonian will have anything to do with the energy.
+Indeed, even for the $R = 0$ case the eigenvalue spectra of the Hamiltonian
+and the energy differ.  Restricting the states to those annihilated by $B$,
+as suggested in \cite{ft:fest} for recovery of the normal case, the Hamiltonian
+eigenvalues are $\hbar \omega n$.  These lack the zero-point energy even though
+we have eliminated the $B$ system.
+
+This, in turn, leads to an examination of the role of the Hamiltonian
+eigenvalues in statistical mechanics.  Textbooks on the subject use the terms
+``Hamiltonian'' and ``energy'' interchangeably, since they are identical for
+the systems these books are concerned with, leaving doubt as to what aspect
+of the Hamiltonian makes it relevant.  That is, is it that it governs the
+time evolution, or that it is the energy?
+
+Correct time evolution is given by an infinite number of Hamiltonians. 
+(Everything in this paragraph holds true for corresponding Lagrangians.)
+To be crude, if $H$ produces correct evolution, so does $H' \equiv c_{1} H + 
+c_{2}, c_{1}, c_{2} \in C$.  While the eigenstates of any such Hamiltonian 
+are, of course, the same, the eigenvalues differ.  Further, introduction of 
+spurious variables can alter the spectrum even more; for instance, use of the
+two-variable Hamiltonian removes both the zero-point energy and the lower
+bound for the undamped SHO.  If the partition sum is to use the eigenvalue
+spectrum of a time-evolution operator, it must be possible to uniquely specify
+which such operator.  Otherwise, two identical systems in equilibrium with
+each other could be mathematically described with different time-evolution
+operators, yielding different partition sums, yielding different values of
+thermodynamic quantities, contradicting the explicitly physical fact of their
+equilibrium.  That is, the math cannot give two physical values.  In addition,
+some Hamiltonians cause the calculations to blow up.  To give a simple
+example, if the Hamiltonian $H_{0} \equiv \frac{p^2}{2 m} + \frac{m \omega^2
+x^2}{2}$ for the (undamped) SHO is replaced with $H' \equiv - \frac{p^2}{2 m}
+- \frac{m \omega^2 x^2}{2} = - H_{0}$, the eigenvalues become $- \hbar \omega
+(n + \frac{1}{2})$.  These values cause the partition sum to diverge.  Since
+$H_{0}$ and $H'$ are indistinguishably good time-evolution operators, we have
+trouble reasoning {\em a priori} why only the former's eigenvalues should be 
+used in the partition sum.
+
+This leads us to consider use of the energy.  For normal (conservative system)
+thermodynamics, there is no difference.  (For that matter, classical 
+thermodynamics {\em always} speaks of energy, rather than of time evolution.)
+In these systems, the energy can be seen as specifying one of the
+time-evolution operators uniquely (i.e. the one that is identical with it).
+Damped systems such as ours will usually have energy spectra different from
+all Hamiltonian spectra.  Since the energy operator is still uniquely 
+determined, we do not have the multiplicity problem that plagued us earlier.
+Further, it makes sense physically that states should be weighted by something
+with physical significance, i.e. the eigenvalues of energy, rather than 
+something with none, i.e. the eigenvalues of time evolution.  (The 
+time-evolution {\em operator} is of course tremendously relevant physically,
+but its eigenvalues seem useless except when they are energy.)
+
+\section{Results}
+
+What are the results of this proposal?  The energy operator is unchanged by
+the presence of a frictional force and remains ${\cal E} = 
+\frac{p_{x}^{2}}{2 m} + \frac{k x^2}{2}$.  Since the CCR $[x, p_{x}] = i 
+\hbar$ holds, we can (as done in \cite{ft:fest}) form the usual creation and 
+destruction operators $a^{\dagger}, a$ with $[a, a^{\dagger}] = 1$.  This is 
+sufficient to show that the eigenvalues of ${\cal E}$ are $\hbar \omega (n +
+\frac{1}{2})$, as usual.
+
+This means that, when we use the energy values in the partition sum, we get
+exactly the statistical mechanics of the undamped oscillator.  This holds
+whether the system is underdamped, critically damped, or overdamped.  Such
+a solution certainly makes subsequent math simple; but does it make sense
+physically?
+
+\section{Discussion}
+
+The use of the partition sum means that we are dealing with a canonical 
+ensemble.  Although there are multiple ways to approach the canonical ensemble,
+to make the identification $\beta = \frac{1}{k_{b} T}$ and thereby give the
+math involved physical significance it is always necessary to model the system
+as coupled to a heat bath.  In our case, we may hope that the sink into which
+the oscillators' energy flows forms the bath, but it does not matter; if and
+only if there is such a bath, the quantities calculated from the partition
+function have physical and not merely mathematical meaning.  What this is
+telling us, then, seems to be that the damping is countered by the presence
+of the heat bath for the oscillators to absorb energy from (or emit it to).
+They maintain the same equilibrium distribution as undamped oscillators would;
+the ensemble is continuously losing energy to friction and gaining it back
+from the bath.
+
+In this context it is important to distinguish between the energy eigenvalues
+and eigenstates being constant and being stationary.  Since $[{\cal E}, H] 
+\neq 0$ for nonzero damping, the energy eigenstates will not be stationary.
+Thus, a ket in one of these states at time $t$ will not have the same
+energy eigenvalue at time $t + \Delta t$ (it is unlikely to be in an energy
+eigenstate at all).  However, as ${\cal E}$ does not explicitly depend on time,
+its eigenstates and eigenvalues are constant.  This means there is no
+time-dependence difficulty in putting the eigenvalue spectrum into the
+partition sum.  The oscillators (in isolation) make their way through the
+eigenstates, which themselves are unchanged.  With the bath, apparently, the
+oscillators are continuously restored at $t + dt$ to whatever combination of 
+energy eigenstates they occupied at $t$.  The nonstationary nature of the
+energy eigenstates would only be a problem if we considered a microcanonical
+ensemble; in this case time-dependence at all stages of calculation seems
+unavoidable.
+
+\section{Confidence}
+
+The above logic shows fairly convincingly that time-evolution operator 
+eigenvalues are unfit candidates for the partition sum spectrum, and that
+energy eigenvalues should be substituted.  It is certainly not a proof,
+however.  Several objections have come up and been countered with varying 
+degrees of surety.
+
+First, it is {\em not} to be thought that the eigenvalues of the above 
+${\cal E}$ can be used for an arbitrarily modified harmonic oscillator system.
+As noted earlier, it is only because both the potential and the kinetic
+energy of the damped system are identical with those of the regular system
+that this can be done.  If one were to modify a harmonic oscillator with some
+potential, the form of the energy would change and the new energy operator
+would have to be used.  It is only elements such as friction that are dropped.
+
+Second, it has been thought that the decaying harmonic oscillator might have 
+the ability to experience canonical statistics even in the absence of an 
+external heat bath due to the presence of both dissipative and regenerative 
+terms.  That is, the energy lost in the $x$ dimension is gained in or made up 
+for by that in the $y$ dimension.  Essentially, the heat bath is internalized.
+One of the advantages of restricting the ensemble is that it seems to indicate
+such an elegant equilibrium mechanism.  Since the $x$ and $y$ equations of
+motion are the same up to the sign of $R$, whenever $x = y$ and $\dot{x} = 
+\dot{y}$, $dE_{x} = - dE_{y}$.  If the energy gained each instant in the
+$y$ motion is immediately transferred to the $x$ motion they can ``cancel''
+each other's frictions and continue to do so forever.  The method of using
+energy eigenvalues in the partition sum does not require that any
+such thing is the case.
+
+Nonetheless, it is quite possible that it implies that something of the sort
+is occurring.  In fact, if we remove any external heat bath and assert that
+the system still has canonical thermodynamics we are forcing such a 
+relationship to be present, though only on a larger scale.  That is, if 
+{\em all} the $x$-motions together lose $dE$ and {\em all} the 
+$y$-motions together gain $dE$ then equilibrium can be maintained by multiple
+transfers whether or not the individual $dE$s can be paired up.  Further, it
+may be the case that the equilibrium distribution given by the partition sum
+using energy eigenvalues {\em does} yield a situation in which $x$ and $y$
+motions only occur in pairs, indicating that such a mechanism is quite likely.
+Insofar as the elegance of the pairing makes its presence probable at all,
+this is probable; and insofar as it does not, its lack is not a problem.
+
+Thirdly, the use of the heat bath, whether internal or external, to feed
+energy into the system is by no means exceptional.  Any normal thermodynamic
+system reaches equilibrium via interactions, described by a small Hamiltonian
+which is always omitted from the system's written Hamiltonian, among the
+particles and between them and the walls.  During this process the bath will
+either contribute energy to or take energy from the ensemble, generally in
+large amounts.  Further, the bath continues to ``push'' the ensemble back
+into equilibrium with energy additions and subtractions as the ensemble
+continuously fluctuates.  The statement that the damped oscillator has a 
+constant equilibrium distribution simply means that the bath is doing this
+in a more regular fashion than usual, since the ensemble is always
+``fluctuating'' (that is, decaying) in the same direction.  There is no reason
+to doubt that this is a legitimate function of a heat bath.
+
+In conclusion, while this solution is not rigorously proven, it satisfies
+our criteria and there are no known overriding objections to it.
+
+\newpage
+\bibliography{main}
+\bibliographystyle{plain}
+  

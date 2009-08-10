@@ -1,0 +1,251 @@
+matrix tmp_x, tmp_y;
+matrix G_x, G_y, G_mag;
+imatrix thin_edge;
+
+void CCubeView::OnEdgeCanny()
+{
+	// TODO: Add your command handler code here
+	CClientDC dc(this);
+	GetGrayImage(IMAGE_X, IMAGE_Y, gray, Dbuffer);
+	gray2.init(IMAGE_X, IMAGE_Y);
+
+	cur_sigma = 1.0;
+	gau_w = MakeGaussMask(cur_sigma, gau);
+	//GaussSmooth(IMAGE_X, IMAGE_Y, image, gau_w);
+	GlobalCanny(IMAGE_X, IMAGE_Y, gray, gray2, gau_w);
+	//NonmaxSuppressGray(IMAGE_X, IMAGE_Y);
+	DrawGrayImage(memDC, IMAGE_X, IMAGE_Y, gray2);
+	
+	//NonmaxSuppress(IMAGE_X, IMAGE_Y);
+	//DrawImage(dc, IMAGE_X, IMAGE_Y, image); 
+		
+	//CClientDC dc(this);
+	dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+
+}
+
+double GlobalCanny(int image_x, int image_y, imatrix& image, imatrix&
+image2, int gau_w)
+{
+	int	i, j, k, i1, i2, j1, j2;
+	double max_grad2 = -1;
+	//GLubyte rr, gg, bb;
+
+	//cur_sigma = 1.0;
+	hi_thres = 0.1;
+	lo_thres = 0.05;
+
+	//imatrix marked(image_x, image_y);
+	//image2.init(image_x, image_y);
+	tmp_x.init(image_x, image_y);
+	tmp_y.init(image_x, image_y);
+	G_x.init(image_x, image_y);
+	G_y.init(image_x, image_y);
+	G_mag.init(image_x, image_y);
+	thin_edge.init(image_x, image_y);
+	
+	//imatrix tmp(image_x, image_y);
+	double	x, y;
+	
+	for (j = 0; j < image_y; j++) {
+		for (i = 0; i < image_x; i++) {
+			x = gau[0] * image[i][j];	
+			y = gau[0] * image[i][j];
+			//TRACE("x = %f, y = %f\n", x, y);
+			for (k = 1; k < gau_w; k++) {
+				//i1 = (i+k)%image_x;
+				//i2 = (i-k+image_x)%image_x;
+				//j1 = (j+k)%image_y;
+				//j2 = (j-k+image_y)%image_y;
+				i1 = i+k;
+				i2 = i-k;
+				j1 = j+k;
+				j2 = j-k;
+				if (i1 > image_x-1) i1 = image_x-1;
+				if (i2 < 0) i2 = 0;
+				if (j1 > image_y-1) j1 = image_y-1;
+				if (j2 < 0) j2 = 0;
+				x += gau[k] * image[i1][j] + gau[k] *
+image[i2][j];
+				y += gau[k] * image[i][j1] + gau[k] *
+image[i][j2];
+			}
+			tmp_x[i][j] = x;
+			tmp_y[i][j] = y;
+			//TRACE("x = %f, y = %f\n", x, y);
+			if (x > 255) x = 255;
+			if (y > 255) y = 255;
+			//image[i][j] = (int)x;
+			//image[i][j] = (int)y;
+		}
+	}
+
+	for (j = 1; j < image_y - 1; j++) {
+		for (i = 1; i < image_x - 1; i++) {
+			G_x[i][j] = (tmp_x[i+1][j-1] + 2*tmp_x[i+1][j] +
+tmp_x[i+1][j+1] 
+				- tmp_x[i-1][j-1] - 2*tmp_x[i-1][j] -
+tmp_x[i-1][j+1]);
+			G_y[i][j] = (tmp_y[i-1][j+1] + 2*tmp_y[i][j+1] +
+tmp_y[i+1][j+1]
+				- tmp_y[i-1][j-1] - 2*tmp_y[i][j-1] -
+tmp_y[i+1][j-1]);
+			//G_mag[i][j] = sqrt(G_x[i][j] * G_x[i][j] +
+G_y[i][j] * G_y[i][j]);
+			G_mag[i][j] = norm2(G_x[i][j], G_y[i][j]);
+
+			if (G_mag[i][j] > max_grad2) {
+				max_grad2 = G_mag[i][j];
+				//TRACE("p[i][j].gx = %01.f\n", p[i][j].gx);
+				//TRACE("p[i][j].gy = %01.f\n", p[i][j].gy);
+				//TRACE("MAX_GRADIENT = %0.1f\n",
+MAX_GRADIENT);
+			}
+
+		}
+	}
+
+	// Normalize each gradient value & init marked image
+	//TRACE("MAX_GRADIENT = %f\n", MAX_GRADIENT);
+	for (j = 0; j < image_y; j++) {
+		for (i = 0; i < image_x; i++) {
+			if (i == 0 || i == image_x-1 || j == 0 || j ==
+image_y-1) {
+				image2[i][j] = 255;
+				thin_edge[i][j] = 0; // init thin edge list
+				continue;
+			}
+			G_mag[i][j] = (G_mag[i][j] / max_grad2); // G_mag
+between [0, 1]
+			image2[i][j] = (int)(G_mag[i][j] * 255);
+
+			//marked[i][j] = 0; // init marked image for
+hysteresis
+			thin_edge[i][j] = 0; // init thin edge list
+			//scale_map[i][j] = cur_sigma; // for adaptive
+painterly rendering
+		}
+	}
+
+	///*
+	double	gx, gy;
+	double	g, g1, g2, g3, g4;
+	double	t; // interpolation parameter
+	
+	//////////////////////////////////////////
+	// Nonmaxima suppression
+	for (j = 1; j < image_y-1; j++) {
+		for (i = 1; i < image_x-1; i++) {
+			gx = G_x[i][j];
+			gy = G_y[i][j];
+			g = G_mag[i][j];
+			//TRACE("gx = %f, gy = %f, g = %f\n", gx, gy, g);
+			//if (gx < 0.01 && gy < 0.01) continue; // not an
+edge
+			if (fabs(gx) >= fabs(gy)) { // close to horizontal
+(note: gy can be 0)
+				t = fabs(gy) / fabs(gx); 
+				//TRACE("t = %f\n", t);
+				g1 = G_mag[i+1][j]; // right
+				g2 = G_mag[i-1][j]; // left
+				//TRACE("g1 = %f, g2 = %f\n", g1, g2);
+				if (gx*gy >= 0.0) { // 1 or 3 quadrant
+					g3 = G_mag[i+1][j+1]; // right up
+					g4 = G_mag[i-1][j-1]; // left down
+				}
+				else { // 2 or 4 quadrant
+					g3 = G_mag[i+1][j-1]; // right down
+					g4 = G_mag[i-1][j+1]; // left up
+				}
+			}
+			else { // close to vertical (note: gx can be 0)
+				t = fabs(gx) / fabs(gy);
+				g1 = G_mag[i][j+1]; // up
+				g2 = G_mag[i][j-1]; // down
+				if (gx*gy >= 0.0) { // 1 or 3 quadrant
+					g3 = G_mag[i+1][j+1]; // up right
+					g4 = G_mag[i-1][j-1]; // down left
+				}
+				else { // 2 or 4 quadrant
+					g3 = G_mag[i-1][j+1]; // up left
+					g4 = G_mag[i+1][j-1]; // down right
+				}
+			}
+	
+///////////////////////////////////////////////////////////
+			if ( g > ((1-t)*g1 + t*g3) && g > ((1-t)*g2 + t*g4)
+) {
+				////////////////////////////////////////
+				thin_edge[i][j] = 1; // it's a thin edge
+				//////////////////////////////////////
+				if (g > hi_thres) {
+					image2[i][j] = 0; // thin edge above
+hi_thres
+				}
+				else 
+					image2[i][j] = 255; // thin edge
+below hi_thres
+			}
+			else { // non-maximum
+				image2[i][j] = 255;
+			}
+			
+		}
+	}
+
+	//////////////////////////////////////////
+	// Hysteresis thresholding
+	///*
+	for (j = 1; j < image_y-1; j++) {
+		for (i = 1; i < image_x-1; i++) {
+			if (image2[i][j] == 0) { // computed thinned edges
+above hi_thres
+				//hyster_visit(image_x, image_y, i, j,
+image2); // visit neighboring pixels
+				hyster_visit2(image_x, image_y, i, j,
+image2, lo_thres); // visit neighboring pixels
+			}
+		}
+	}
+	
+	GLOBAL_CANNY_DONE = 1;
+	//*/
+	
+	return max_grad2;
+}
+
+void hyster_visit2(int image_x, int image_y, int x0, int y0, imatrix&
+image2, double lo_thres)
+{
+	int	i, j, x, y;
+	int	done_flag;
+	double g;
+
+	//image2[x0][y0] = 0; // now marked as edge
+	done_flag = 0;
+	for (j = -1; j <= 1; j++) {
+		for (i = -1; i <= 1; i++) {
+			x = x0 + i;
+			y = y0 + j;
+			if (x <= 0 || x >= image_x-1 || y <= 0 || y >=
+image_y-1)
+				continue;
+			if (image2[x][y] == 0) continue; // already marked
+as edge
+			if (!thin_edge[x][y]) continue; // not a thin edge
+			g = G_mag[x][y];
+			if (g > lo_thres) {
+				image2[x][y] = 0; // newly marked as edge
+pixel
+				hyster_visit(image_x, image_y, x, y,
+image2);
+				//done_flag = 1; // found an extending edge
+pixel
+				//break;
+			}
+		}
+		//if (done_flag) break; // found the right neighboring edge
+pixel. Get out!
+	}
+}

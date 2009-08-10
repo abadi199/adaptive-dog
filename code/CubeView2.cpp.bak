@@ -1,0 +1,1624 @@
+// TIPView2.cpp : implementation of the CCubeView class
+//
+#include "stdafx.h"
+
+#include "Cube.h"
+#include "CubeDoc.h"
+#include "CubeView.h"
+#include "NameDialog.h"
+
+#include "defines.h"
+#include "globals.h"
+
+extern NameDialog* dlg;
+
+#include <cmath>
+#include <deque>
+using namespace std;
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
+
+#include <limits.h>
+
+#define PI 3.1415926535
+#define INFI 	10000
+
+#define STEP	10
+
+extern int cal3D;
+extern point3D camera, Prevcamera, vanVec;
+extern float camRot;
+extern float camRot2;
+extern float viewAngle;
+extern char name[256];
+extern char prefix[256];
+
+extern GLuint texName[MAX_TIP_FG_NUM];
+
+extern int isVanish, fg_num;
+
+static GLfloat winWidth, winHeight;
+extern void swap(void);
+extern int file_loaded;
+extern GLubyte *Dbuffer;
+extern GLubyte *Maskbuffer;
+extern GLubyte *Backbuffer;
+
+extern float x_size, y_size;
+extern point2D ImageCoord[7];
+
+extern hCoord WC[7];
+extern hCoord FG[MAX_TIP_FG_NUM][MAX_FRAMES][MAX_TIP_FG_NUM];
+
+extern point3D Wc, ray;
+extern point2D Vc;
+extern point3D v[MAX_TIP_FG_NUM];
+extern float half_x, half_y;
+
+extern void CalImageCoord();
+extern void CalWorldCoord();
+extern void renderNone(void);
+
+extern point2D vanish;
+extern point2D movement;
+extern int isVanish, isPnt;
+extern ObjPnt which;
+extern int pcount;
+
+extern int status;
+extern int fg_num;
+
+extern int IMAGE_X, IMAGE_Y;
+extern int view_x, view_y;
+
+int play_mode = OFF_PLAY;
+int video_mode = OFF_VIDEO;
+int play_direction = FORWARD;
+
+//#define LEVEL_DOWN 5  // for multiresolution curve
+int LEVEL_DOWN = 0;  // for multiresolution curve
+
+//MRBspline curve[20]; // IB-snakes
+
+IPen ip[500]; // intelligent pen strokes
+int pc; // pen counter
+
+deque<PixeL> pnts;
+MRBspline curve, tmp_curve;
+
+//int stroke_mode = UNIFORM_THICK;
+int stroke_mode = MIDDLE_THICK;
+int min_ip, min_curve;
+
+/////////////////////////////////////////////////////////////////////////////
+// CCubeView construction/destruction
+
+void CCubeView::OnLButtonDown(UINT nFlags, CPoint point) 
+{
+	// TODO: Add your message handler code here and/or call default
+	button_pressed(nFlags, 1, point.x, point.y);
+	
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CCubeView::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	button_pressed(nFlags, 2, point.x, point.y);
+
+	CView::OnRButtonDown(nFlags, point);
+}
+
+void CCubeView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	button_released(1, point.x, point.y);
+
+	CView::OnLButtonUp(nFlags, point);
+}
+
+void CCubeView::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	button_released(2, point.x, point.y);
+
+	CView::OnRButtonUp(nFlags, point);
+}
+
+void CCubeView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	mouse_motion(nFlags, point.x, point.y);	
+
+	CView::OnMouseMove(nFlags, point);
+}
+
+extern int key_pressed;
+
+void CCubeView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: Add your message handler code here and/or call default
+	//if (nChar != VK_PROCESSKEY) {
+		key_input(nChar);
+	//}
+	
+	CView::OnKeyUp(nChar, nRepCnt, nFlags);
+}
+
+int cur_level = 0;
+
+void CCubeView::key_input(UINT nChar)
+{
+	CClientDC dc(this);
+	int cur_level;
+
+	switch (nChar) {
+		case 68: // 'd' (demonstration of continuous curve blending)
+			if (status == STROKE_EDIT_INDIV) {
+				/////////////////////////////////////////////////////////////////////////
+				// Draw particular level curve
+				int max_level = ip[min_ip].curve[min_curve].GetMaxLevel();
+				for (int k = max_level; k > 0; k--) {
+					for (double t = 0; t <= 1; t+=0.1) {
+						double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+						DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 0, 0, 255);
+						//ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, k, 255, 255, 0);
+						ip[min_ip].curve[min_curve].DrawBlendedCurve(&double_buffer, k, k-1, t, 0, 255, 0);
+						dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+					}
+				}
+				for (int k = 0; k < max_level; k++) {
+					for (double t = 0; t <= 1; t+=0.1) {
+						double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+						DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 0, 0, 255);
+						//ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, k, 255, 255, 0);
+						ip[min_ip].curve[min_curve].DrawBlendedCurve(&double_buffer, k, k+1, t, 0, 255, 0);
+						dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+					}
+				}
+				//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 255, 255, 0);
+				///////////////////////////////////////////////////////////////////////
+				//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				
+				//tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				//TRACE("Key 'c' pressed!\n");
+			}
+			break;
+		case 88: // Stop the program and save the current memDC
+			key_pressed = 1;
+			break;
+		case 83: // 's'
+			TRACE("save BMP\n");
+			SaveBMPfromMemDC(dc, IMAGE_X, IMAGE_Y, "_result.bmp");
+			if (status == IPEN_EXTERNAL || status == STROKE_EDIT) {
+				//double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				ClearMemDC(&memDC);
+				//ClearMemDC(&double_buffer);
+				//pc++;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&memDC, ip, pc+1, 1, 0, 0, 0);
+				//DrawBWireMRSampledEdgeMemDC(&memDC, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 0, 0, 0);
+				//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0); // yellow
+				//DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0); // yellow
+				//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, disp_x, disp_y, SRCCOPY);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				SaveFileBMP2(IMAGE_X, IMAGE_Y, "result1.bmp");
+			}
+			break;
+		case 84: // 't'
+			if (status == IPEN_EXTERNAL || status == ACTIVATED_IPEN_EXTERNAL) {
+				stroke_mode += 10;
+				if (stroke_mode > 40) stroke_mode = 10;
+				ip[pc].curve[ip[pc].cc].stroke_mode = stroke_mode;
+			}
+			break;
+		case 67: // 'c'
+			if (status == FREEHAND_CURVE) {
+				ClearMemDC(&memDC);
+				//DrawMRcurveMemDC(&memDC, curve, 0, pnts, 255, 0, 0);
+				//DrawMRcurveMemDC(&memDC, curve, 6, pnts, 0, 255, 0);
+				//WaveletTransform(&memDC, curve, 0, pnts, 255, 0, 0);
+				WaveletTransform2(&memDC, curve, pnts, 255, 0, 0);
+				cur_level = curve.GetMaxLevel();
+				DrawFilteredMRCurveMemDC(&memDC, curve, cur_level, 255, 0, 0);
+				//curve.DrawCntPnts(&memDC, 0, 0, 0);
+				//DrawFilteredMRCurveMemDC(&memDC, curve, 0, 255, 0, 255);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				TRACE("Key 'c' pressed!\n");
+				status = CURVE_EDIT;
+			}
+			break;
+		case VK_DOWN:
+			if (status == STROKE_EDIT_INDIV_ACTIVATED) {
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//cur_level = ip[min_ip].curve[min_curve].GetLevel();
+				//if (DrawMRcurveMemDC(&memDC, curve, ++level_down, pnts, 255, 0, 0))
+				
+				cur_level = ip[min_ip].curve[min_curve].cur_level;
+				cur_level--;
+				if (cur_level < 0) cur_level = 0;
+				ip[min_ip].curve[min_curve].cur_level = cur_level;
+				//CurveSmoothing(ip[min_ip].curve[min_curve]);
+				TRACE("j = %d\n", ip[min_ip].curve[min_curve].cur_level);
+				//if (DrawFilteredMRCurveMemDC(&memDC, curve, --cur_level, 255, 0, 255))
+                //   ++cur_level;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+				////////////////////////////////////////////////////////////////////
+				ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 0, 255, 0);
+				ip[min_ip].curve[min_curve].DrawMRCntPnts(&double_buffer, cur_level, 255, 0, 0);
+				//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+				//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				//TRACE("Key 'c' pressed!\n");
+			}
+			if (status == STROKE_EDIT_ACTIVATED) {
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//cur_level = ip[min_ip].curve[min_curve].GetLevel();
+				//if (DrawMRcurveMemDC(&memDC, curve, ++level_down, pnts, 255, 0, 0))
+				--ip[min_ip].curve[min_curve].cur_level;
+				CurveSmoothing(ip[min_ip].curve[min_curve]);
+				TRACE("j = %d\n", ip[min_ip].curve[min_curve].cur_level);
+				//if (DrawFilteredMRCurveMemDC(&memDC, curve, --cur_level, 255, 0, 255))
+                //   ++cur_level;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+				ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+				ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				//TRACE("Key 'c' pressed!\n");
+			}
+			if (status == CURVE_EDIT) {
+				ClearMemDC(&memDC);
+				//if (DrawMRcurveMemDC(&memDC, curve, ++level_down, pnts, 255, 0, 0))
+				if (DrawFilteredMRCurveMemDC(&memDC, curve, --cur_level, 255, 0, 255))
+                    ++cur_level;
+				//curve.DrawCntPnts(&memDC, 0, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				TRACE("Key 'c' pressed!\n");
+			}
+			
+			if (status == ACTIVATED_IPEN_EXTERNAL) {
+				LEVEL_DOWN++; // mouse motion
+				TRACE("LEVEL_DOWN = %d\n", LEVEL_DOWN);
+			}
+			break;
+		case VK_UP:
+			if (status == STROKE_EDIT_INDIV_ACTIVATED) {
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//cur_level = ip[min_ip].curve[min_curve].GetLevel();
+				//if (DrawMRcurveMemDC(&memDC, curve, ++level_down, pnts, 255, 0, 0))
+				cur_level = ip[min_ip].curve[min_curve].cur_level;
+				cur_level++;
+				if (cur_level > 7) cur_level = 7;
+				ip[min_ip].curve[min_curve].cur_level = cur_level;
+				//CurveSmoothing(ip[min_ip].curve[min_curve]);
+				TRACE("j = %d\n", ip[min_ip].curve[min_curve].cur_level);
+				//if (DrawFilteredMRCurveMemDC(&memDC, curve, --cur_level, 255, 0, 255))
+                //   ++cur_level;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+				////////////////////////////////////////////////////////
+				ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 0, 255, 0);
+				ip[min_ip].curve[min_curve].DrawMRCntPnts(&double_buffer, cur_level, 255, 0, 0);
+				//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+				//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				//TRACE("Key 'c' pressed!\n");
+			}
+			if (status == STROKE_EDIT_ACTIVATED) {
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//cur_level = ip[min_ip].curve[min_curve].GetLevel();
+				//if (DrawMRcurveMemDC(&memDC, curve, ++level_down, pnts, 255, 0, 0))
+				++ip[min_ip].curve[min_curve].cur_level;
+				CurveSmoothing(ip[min_ip].curve[min_curve]);
+				TRACE("j = %d\n", ip[min_ip].curve[min_curve].cur_level);
+				//if (DrawFilteredMRCurveMemDC(&memDC, curve, --cur_level, 255, 0, 255))
+                //   ++cur_level;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+				ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+				ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				//TRACE("Key 'c' pressed!\n");
+			}
+			if (status == CURVE_EDIT) {
+				ClearMemDC(&memDC);
+				//if (DrawMRcurveMemDC(&memDC, curve, --level_down, pnts, 255, 0, 0))
+				if (DrawFilteredMRCurveMemDC(&memDC, curve, ++cur_level, 255, 0, 255))
+					--cur_level;
+				//curve.DrawCntPnts(&memDC, 0, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				tmp_curve.CopyLevel(curve.GetCurLevel(), curve);
+				TRACE("Key 'c' pressed!\n");
+			}
+			break;
+				/*
+		case 90: // 'z' -> narrow angle
+			viewAngle -=2;
+			break;
+		case 88: // 'x' -> enlarge angle
+			viewAngle +=2;
+			break;
+		*/
+		//case 68: // 'd' -> 'Downward camera'
+		//	if (status == PANORAMIC_RENDER) {
+		//		model_rotate_y[max_transform_num] = -90;
+		//		max_transform_num++; 
+		//		model_translate_z[max_transform_num] = -200;
+		//		Invalidate(FALSE);
+		//	}
+		//	break;
+		case 'w':
+		case '8':
+			camera.z-=STEP;
+    		break;
+		case VK_NUMPAD8:
+			camRot2 += 1.0;
+			break;
+		case VK_NUMPAD2:
+			camRot2 -= 1.0;
+			break;
+		case '2':
+			camera.z+=STEP;
+    		break;
+		case VK_LEFT:
+			camRot += 1.0; // M_PI/180
+			break;
+		case '4':
+			camera.x-=STEP;
+    		break;
+		case VK_RIGHT:
+			camRot -= 1.0; // M_PI/180
+			break;
+		case '6':
+			camera.x+=STEP;
+    		break;
+		case '1' : 
+			camera.x-=STEP/2;
+			camera.z+=STEP;
+			break;
+		case '3' :
+			camera.x+=STEP/2;
+			camera.z+=STEP;
+			break;
+		case '7' :
+			camera.x-=STEP/2;
+			camera.z-=STEP;
+			break;
+		case '9' :
+			camera.x+=STEP/2;
+			camera.z-=STEP;
+			break;
+		case VK_NUMPAD6:
+			viewAngle+=2;
+			break;
+		case VK_NUMPAD4:
+			viewAngle-=2;
+			break;
+	}
+
+	if (status == RENDER)
+		Invalidate(FALSE);
+}
+
+void CCubeView::button_pressed(UINT flag, int button, int x, int y)
+{
+	switch (button) {
+		case 1: LeftButtonPressed(x, y);
+				break;
+		case 2: RightButtonPressed(flag, x, y);
+				break;
+	}
+}
+
+//Stroke *stroke_ptr = new Stroke;
+int idx = -1; // curve control point index
+
+void CCubeView::LeftButtonPressed(int x, int y)
+{
+	CPen pen, *pOldPen;
+	int cur_level;
+	
+	//key_pressed = 1;
+
+	CClientDC dc(this);
+
+	switch (status) {
+		case PIXEL_SAMPLE:  // button 1 pressed
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+
+			Free.x = seed.x;	Free.y = seed.y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			//DrawPointMemDC(&double_buffer, x, y, FIS_POINT_SIZE, 0, 255, 0);
+			//double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &dc, 0, 0, SRCCOPY);
+			pixel_mark.zero();
+			pix_d_count++;
+			
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			TRACE("I'm here!\n");
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			gau_w = MakeGaussMask(cur_sigma, gau);
+			max_grad2 = LocalCanny(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray, gray2, gau_w);
+			//DrawGrayImage(double_buffer, IMAGE_X, IMAGE_Y, gray2);
+			DrawGrayImageMask(double_buffer, IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray2);
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			status = PIXEL_SAMPLE_ACTIVATED;
+			break;	
+		case EDGE_SAMPLE:
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+			if (gray2[seed.x][seed.y] == 0) { // edge pixel
+				TRACE("I'm here!\n");
+				EdgeColor(memDC, gray2, seed.x, seed.y, 255, 0, 0);
+
+			}
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			status = EDGE_SAMPLE_ACTIVATED;
+			break;
+		case EDGE_TUNE:
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+
+			//double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			if (dlg->m_scale_group == 1)
+				status2 = SCALE_DOWN;
+			else if (dlg->m_scale_group == 2)
+				status2 = HI_THRES_DOWN;
+			else if (dlg->m_scale_group == 3)
+				status2 = LO_THRES_DOWN;
+			else if (dlg->m_scale_group == 4)
+				status2 = SIZE_DOWN;
+			SetTimer(2, 20, NULL);
+			break;
+		case EDGE_PAINT:  // button 1 pressed
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+
+			Free.x = seed.x;	Free.y = seed.y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			TRACE("I'm here!\n");
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			gau_w = MakeGaussMask(cur_sigma, gau);
+			max_grad2 = LocalCanny(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray, gray2, gau_w);
+			//DrawGrayImage(double_buffer, IMAGE_X, IMAGE_Y, gray2);
+			DrawGrayImageMask(double_buffer, IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray2);
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			status = EDGE_PAINT_ACTIVATED;
+			break;	
+		case STROKE_EDIT: // button 1 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+			status = STROKE_EDIT_ACTIVATED; 
+			break;
+		case STROKE_EDIT_INDIV: // button 1 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			cur_level = ip[min_ip].curve[min_curve].cur_level;
+			ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 0, 255, 0);
+			ip[min_ip].curve[min_curve].DrawMRCntPnts(&double_buffer, cur_level, 255, 0, 0);
+			//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+			status = STROKE_EDIT_INDIV_ACTIVATED;  
+			break;
+		case STROKE_EDIT_ACTIVATED:  // button 1 pressed
+			//TRACE("CURVE_EDIT Button 1 pressed\n");
+			seed.x = x;
+			//seed.y = (IMAGE_Y - 1) - y;
+			seed.y = y;
+			//pnts.insert(pnts.end(), seed);
+
+			idx = ip[min_ip].curve[min_curve].FindCntPnt(seed.x, seed.y);
+			if (idx >= 0) {
+				status = STROKE_EDIT_ACTIVATED2;
+			}
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+
+			break;
+		case STROKE_EDIT_INDIV_ACTIVATED:  // button 1 pressed
+			// picking a single control point from MR control points
+			seed.x = x;
+			seed.y = y;
+			cur_level = ip[min_ip].curve[min_curve].cur_level;
+			idx = ip[min_ip].curve[min_curve].FindMRCntPnt(cur_level, seed.x, seed.y);
+			if (idx >= 0) {
+				status = STROKE_EDIT_INDIV_ACTIVATED2;
+			}
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			break;
+		case IPEN_EXTERNAL:  // button 1 pressed
+			seed.x = x;
+			seed.y = (IMAGE_Y - 1) - y;
+
+			///////////////////////////////////////////////////////////////
+			// Initlialization of Enhanced Lane!
+			seed_count = 0;
+			ClearPxlImage(IMAGE_X, IMAGE_Y, cumulative_next_pxl);
+			ClearPxlImage(IMAGE_X, IMAGE_Y, next_pxl);
+			ClearCostImage(IMAGE_X, IMAGE_Y, pxl_cost);
+			ClearImage(IMAGE_X, IMAGE_Y, boundary); // cumulative region 
+			ClearImage(IMAGE_X, IMAGE_Y, tmp_img); // intersecting region 
+			ClearImage(IMAGE_X, IMAGE_Y, boundary2); // previous region 
+			///////////////////////////////////////////////////////////////
+			//ip[pc].cc = 0; // curve counter = 0;
+			ip[++pc].cc = 0; // curve counter = 0;
+			ip[pc].curve[ip[pc].cc].stroke_mode = stroke_mode;
+			
+			seeds[seed_count].x = seed.x;
+			seeds[seed_count].y = seed.y;
+			seed_count++;
+
+			Free.x = seed.x;	Free.y = seed.y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			//DrawPointMemDC(&double_buffer, x, y, FIS_POINT_SIZE, 0, 255, 0);
+			//DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+			
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, boundary2, boundary);
+			ClearNodes(MASK_SIZE, MASK_SIZE, item);
+			MasktoNodes(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, image, max_grad, gradient, gradient, item);
+			Intelligent_Scissor(MASK_SIZE, IMAGE_X, IMAGE_X, item);
+			//swap();
+			//cc = 0; // curve counter = 0;
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc-1, 0, 0, 0, 255);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			status = ACTIVATED_IPEN_EXTERNAL;
+			break;	
+		case IPEN_INTERNAL:  // button 1 pressed
+			seed.x = x;
+			seed.y = (IMAGE_Y - 1) - y;
+
+			///////////////////////////////////////////////////////////////
+			// Initlialization of Enhanced Lane!
+			seed_count = 0;
+			ClearPxlImage(IMAGE_X, IMAGE_Y, cumulative_next_pxl);
+			ClearPxlImage(IMAGE_X, IMAGE_Y, next_pxl);
+			ClearCostImage(IMAGE_X, IMAGE_Y, pxl_cost);
+			ClearImage(IMAGE_X, IMAGE_Y, boundary); // cumulative region 
+			ClearImage(IMAGE_X, IMAGE_Y, tmp_img); // intersecting region 
+			ClearImage(IMAGE_X, IMAGE_Y, boundary2); // previous region 
+			///////////////////////////////////////////////////////////////
+			ip[++pc].cc = 0; // curve counter = 0;
+			
+			seeds[seed_count].x = seed.x;
+			seeds[seed_count].y = seed.y;
+			seed_count++;
+
+			Free.x = seed.x;	Free.y = seed.y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			DrawPointMemDC(&double_buffer, x, y, FIS_POINT_SIZE, 0, 255, 0);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, boundary2, boundary);
+			ClearNodes(MASK_SIZE, MASK_SIZE, item);
+			MasktoNodes(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, image, max_grad, gradient, gradient, item);
+			Intelligent_Scissor_Oriented(MASK_SIZE, IMAGE_X, IMAGE_X, item);
+			//swap();
+			//cc = 0; // curve counter = 0;
+			status = ACTIVATED_IPEN_INTERNAL;
+			break;	
+		case ACTIVATED_IPEN_EXTERNAL:  // button 1 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			SaveCumulativeNextPxl(Free, seed, next_pxl, cumulative_next_pxl);
+			//DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0);
+
+			/////////////////////////////////////////////////////
+			// 2002. Sept. 23. Minimize time for reinitialization
+			ClearAllImagesDepthFirst(seed.x, seed.y);
+
+			seed.x = Free.x;	seed.y = Free.y;
+			seeds[seed_count].x = seed.x;
+			seeds[seed_count].y = seed.y;
+			seed_count++;
+			//DrawPointMemDC(&double_buffer, seed.x, IMAGE_Y-1-seed.y, FIS_POINT_SIZE, 0, 255, 0);
+			//DrawBoxMemDC(&double_buffer, MASK_SIZE, Free.x, IMAGE_Y-1-Free.y, 255, 0, 255);
+			//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, curve, 4, Free, seed, 0, 255, 255);
+			//DrawBWireCumulativeMRSampledEdgeMemDC(&double_buffer, curve, cc, 255, 255, 0);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 0, 0, 0, 255);
+			////////////////////////////////////////////////////////////////////////
+			// Computes all C and D data
+			WaveletTransform3(ip[pc].curve[ip[pc].cc]);
+			/////////////////////////////////////////////////////////////////
+			
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, 
+				MASK_SIZE, seed, boundary2, boundary);
+			
+			ClearNodes(MASK_SIZE, MASK_SIZE, item);
+			MasktoNodes2AvoidingIntersection(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, image, max_grad, gradient, 
+				gradient, cumulative_next_pxl, item);
+			Intelligent_Scissor(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+			
+			//DrawSeedsMemDC(&double_buffer, seed_count, 0, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//cc++; // increase curve counter by 1
+			ip[pc].cc++;
+			ip[pc].curve[ip[pc].cc].stroke_mode = stroke_mode;
+			break;
+		case ACTIVATED_IPEN_INTERNAL:  // button 1 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			SaveCumulativeNextPxl(Free, seed, next_pxl, cumulative_next_pxl);
+			//DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0);
+
+			/////////////////////////////////////////////////////
+			// 2002. Sept. 23. Minimize time for reinitialization
+			ClearAllImagesDepthFirst(seed.x, seed.y);
+
+			seed.x = Free.x;	seed.y = Free.y;
+			seeds[seed_count].x = seed.x;
+			seeds[seed_count].y = seed.y;
+			seed_count++;
+			DrawPointMemDC(&double_buffer, seed.x, IMAGE_Y-1-seed.y, FIS_POINT_SIZE, 0, 255, 0);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, Free.x, IMAGE_Y-1-Free.y, 255, 0, 255);
+			//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, curve, 4, Free, seed, 0, 255, 255);
+			//DrawBWireCumulativeMRSampledEdgeMemDC(&double_buffer, curve, cc, 255, 255, 0);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 0, 255, 255, 0);
+			
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, 
+				MASK_SIZE, seed, boundary2, boundary);
+			
+			ClearNodes(MASK_SIZE, MASK_SIZE, item);
+			MasktoNodes2AvoidingIntersection(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, image, max_grad, gradient, 
+				gradient, cumulative_next_pxl, item);
+			Intelligent_Scissor_Oriented(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+			
+			DrawSeedsMemDC(&double_buffer, seed_count, 0, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//cc++; // increase curve counter by 1
+			ip[pc].cc++;
+			break;
+		case CURVE_EDIT:  // button 1 pressed
+			TRACE("CURVE_EDIT Button 1 pressed\n");
+			seed.x = x;
+			//seed.y = (IMAGE_Y - 1) - y;
+			seed.y = y;
+			//pnts.insert(pnts.end(), seed);
+
+			idx = tmp_curve.FindCntPnt(seed.x, seed.y);
+			if (idx >= 0) {
+				status = CURVE_EDIT_ACTIVATED;
+			}
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+
+			ClearMemDC(&double_buffer);			
+			
+			//seeds[seed_count].x = seed.x;
+			//seeds[seed_count].y = seed.y;
+			break;
+		
+		case FREEHAND_CURVE:  // button 1 pressed
+			//SetCapture(); // SetCapture the Window until FIS ends
+			TRACE("FREEHAND_CURVE Button 1 pressed\n");
+			seed.x = x;
+			//seed.y = (IMAGE_Y - 1) - y;
+			seed.y = y;
+			pnts.insert(pnts.end(), seed);
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+
+
+			status = FREEHAND_ACTIVATED;
+			
+			//seeds[seed_count].x = seed.x;
+			//seeds[seed_count].y = seed.y;
+			break;
+		case STROKES: // left buttion pressed
+			{
+				/*
+				float xc, yc, theta, l;
+
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//ImageMoment(30, x, (IMAGE_Y-1)-y, stroke_ptr);
+				//ImageMoment(10, x, (IMAGE_Y-1)-y, stroke_ptr);
+				//xc = stroke_ptr->GetXc();
+				//yc = IMAGE_Y - 1 - stroke_ptr->GetYc(); // Turn back to DC coord
+				//theta = stroke_ptr->GetTheta();
+				//w = stroke_ptr->GetW();
+				//l = stroke_ptr->GetLL();
+				//r = stroke_ptr->GetR();
+				//g = stroke_ptr->GetG();
+				//b = stroke_ptr->GetB();
+
+				pen.CreatePen(PS_SOLID, (int)3, RGB(0, 255, 255));
+				//pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+				pOldPen = (CPen *)dc.SelectObject(&pen);
+				//dc.MoveTo(xc - (int)(l*cos(theta)/2), yc + (int)(l*sin(theta)/2));
+				//dc.LineTo(xc + (int)(l*cos(theta)/2), yc - (int)(l*sin(theta)/2));
+				dc.MoveTo((int)xc - (int)(l*cos(theta)/2), (int)yc + (int)(l*sin(theta)/2));
+				dc.LineTo((int)xc + (int)(l*cos(theta)/2), (int)yc - (int)(l*sin(theta)/2));
+				dc.SelectObject(pOldPen);
+				*/
+			}
+			break;
+		case MY_STROKES: // left buttion pressed
+			{
+				/*
+				float xc, yc, theta, w, l;
+				unsigned char	r, g, b;
+
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//void image_moment(int size, int l, int m, int center_x, int center_y, Stroke *stroke_ptr)
+				//ImageMoment(30, x, (IMAGE_Y-1)-y, stroke_ptr);
+				//ImageMoment(10, x, (IMAGE_Y-1)-y, stroke_ptr);
+				//xc = stroke_ptr->GetXc();
+				//yc = IMAGE_Y - 1 - stroke_ptr->GetYc(); // Turn back to DC coord
+				//theta = stroke_ptr->GetTheta();
+				//theta = PI / 3.0; // 60 degree
+				theta = (float)(PI / 4.0); // 45 degree
+				//w = stroke_ptr->GetW();
+				w = 10;
+				//l = stroke_ptr->GetL();
+				l = 20;
+
+				//r = stroke_ptr->GetR();
+				//g = stroke_ptr->GetG();
+				//b = stroke_ptr->GetB();
+
+				//pen.CreatePen(PS_SOLID, (int)w, RGB(0, 255, 255));
+				pen.CreatePen(PS_SOLID, (int)w, RGB(r, g, b));
+				pOldPen = (CPen *)dc.SelectObject(&pen);
+				dc.MoveTo((int)xc - (int)(l*cos(theta)/2), (int)yc + (int)(l*sin(theta)/2));
+				dc.LineTo((int)xc + (int)(l*cos(theta)/2), (int)yc - (int)(l*sin(theta)/2));
+				dc.SelectObject(pOldPen);
+				*/
+			}
+			break;
+		case TWOD: // left buttion pressed
+				vanish.y = (float)((IMAGE_Y-1)-y);
+				isVanish = 1;
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				pen.CreatePen(PS_SOLID, 2, RGB(0, 255, 255));
+				pOldPen = (CPen *)dc.SelectObject(&pen);
+				dc.MoveTo(0, y);
+				dc.LineTo(IMAGE_X-1, y);
+				dc.SelectObject(pOldPen);
+			break;
+		case RENDER:
+			movement.x = (float)x;
+			movement.y = (((float)IMAGE_Y-1)-y);
+			Invalidate(FALSE);
+			break;
+		case FIS:  // button 1 pressed
+			SetCapture(); // SetCapture the Window until FIS ends
+			seed.x = x;
+			seed.y = (IMAGE_Y - 1) - y;
+		
+			seeds[seed_count].x = seed.x;
+			seeds[seed_count].y = seed.y;
+			seed_count++;
+
+			Free.x = seed.x;	Free.y = seed.y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawPointDC(&dc, x, y, FIS_POINT_SIZE, 0, 255, 0);
+			DrawBoxDC(&dc, MASK_SIZE, x, y, 255, 0, 255);
+			ClearPxlImage(IMAGE_X, IMAGE_Y, next_pxl);
+			ClearCostImage(IMAGE_X, IMAGE_Y, pxl_cost);
+			ClearImage(IMAGE_X, IMAGE_Y, boundary); // cumulative region 
+			ClearImage(IMAGE_X, IMAGE_Y, tmp_img); // intersecting region 
+			ClearImage(IMAGE_X, IMAGE_Y, boundary2); // previous region 
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, 
+				MASK_SIZE, seed, boundary2, boundary);
+			ClearNodes(MASK_SIZE, MASK_SIZE, item);
+			MasktoNodes(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, image, max_grad, 
+				gradient, gradient, item);
+			Intelligent_Scissor(MASK_SIZE, IMAGE_X, IMAGE_X, item);
+			//swap();
+			status = ACTIVATED2_;
+			break;
+		case ACTIVATED2_:  // button 1 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			SaveCumulativeNextPxl(Free, seed, next_pxl, cumulative_next_pxl);
+			DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0);
+
+			seed.x = Free.x;	seed.y = Free.y;
+			seeds[seed_count].x = seed.x;
+			seeds[seed_count].y = seed.y;
+			seed_count++;
+			DrawPointMemDC(&double_buffer, seed.x, IMAGE_Y-1-seed.y, FIS_POINT_SIZE, 0, 255, 0);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, Free.x, IMAGE_Y-1-Free.y, 255, 0, 255);
+			DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			ClearPxlImage(IMAGE_X, IMAGE_Y, next_pxl);
+			ClearCostImage(IMAGE_X, IMAGE_Y, pxl_cost);
+			ClearImage(IMAGE_X, IMAGE_Y, boundary); /* cumulative region */
+			ClearImage(IMAGE_X, IMAGE_Y, tmp_img); /* intersecting region */
+			ClearImage(IMAGE_X, IMAGE_Y, boundary2); /* previous region */
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, 
+				MASK_SIZE, seed, boundary2, boundary);
+			ClearNodes(MASK_SIZE, MASK_SIZE, item);
+			MasktoNodes2AvoidingIntersection(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, image, max_grad, gradient, 
+				gradient, cumulative_next_pxl, item);
+			Intelligent_Scissor(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+			
+			DrawSeedsMemDC(&double_buffer, seed_count, 0, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			break;
+
+		
+	}
+}
+
+void CCubeView::RightButtonPressed(UINT flag, int x, int y)
+{
+	CClientDC dc(this);
+
+	switch (status) {
+		case EDGE_TUNE:
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			//"I'm here!\n";
+			if (dlg->m_scale_group == 1)
+				status2 = SCALE_UP;
+			else if (dlg->m_scale_group == 2)
+				status2 = HI_THRES_UP;
+			else if (dlg->m_scale_group == 3)
+				status2 = LO_THRES_UP;
+			else if (dlg->m_scale_group == 4)
+				status2 = SIZE_UP;
+			SetTimer(2, 20, NULL);
+			//status = EDGE_PAINT_ACTIVATED;
+			break;
+		case STROKE_EDIT_ACTIVATED: // button 2 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+			status = STROKE_EDIT; 
+			break;
+		case STROKE_EDIT_INDIV_ACTIVATED: // button 2 pressed
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			status = STROKE_EDIT_INDIV; 
+			break;
+		case ACTIVATED_IPEN_EXTERNAL: // right button clicked
+			// second button pressed : status = FIS
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			if (seed.x != st_point.x || seed.y != st_point.y) { // if the current seed is not the st_point
+				// Clear tmp_img
+				ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, tmp_img);
+				// check the current window intersects the cumulative region
+				int if_intersect = FindIntersectingRegion4(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, st_point); 
+				if (!if_intersect || seed_count <= 2) {
+					Free.x = OldFree.x;
+					Free.y = OldFree.y;
+				}
+				else	{	// current window contains the st_point
+					Free.x = st_point.x;
+					Free.y = st_point.y;
+					float min_cost = FindMinCostInIntersectingBoundary(IMAGE_X, IMAGE_Y, 
+						OLD_MASK_SIZE, MASK_SIZE, Free, OldFree);
+					ClearNodes2(MASK_SIZE, MASK_SIZE, item);
+					MasktoNodes3(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, image, 
+						tmp_img, min_cost, max_grad, gradient, 
+						gradient, item);
+					Intelligent_Scissor2(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+					SaveCumulativeNextPxl(Free, seed, next_pxl, cumulative_next_pxl);
+				}
+				OldFree.x = Free.x;
+				OldFree.y = Free.y;
+				OLD_MASK_SIZE = MASK_SIZE;
+			}		
+			ReleaseCapture();
+			/// Draw the boundary segment on Double Buffer and transfer it to screen
+			//////////////////////////////////////////////////////
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//ClearMemDC(&double_buffer);
+			//DrawBWireCumulativeMRSampledEdgeMemDC(&double_buffer, curve, cc-1, 255, 255, 0);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 0, 0, 0, 255);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, curve[cc], 4, Free, seed, 255, 255, 0);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], 4, Free, seed, 255, 255, 0);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 0, 0, 255);
+			////////////////////////////////////////////////////////////////////////
+			// Computes all C and D data
+			WaveletTransform3(ip[pc].curve[ip[pc].cc]);
+			/////////////////////////////////////////////////////////////////
+			//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0); // yellow
+			//DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0); // yellow
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, disp_x, disp_y, SRCCOPY);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			status = IPEN_EXTERNAL;
+			break;
+		case ACTIVATED_IPEN_INTERNAL: // right button clicked
+			// second button pressed : status = FIS
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			if (seed.x != st_point.x || seed.y != st_point.y) { // if the current seed is not the st_point
+				// Clear tmp_img
+				ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, tmp_img);
+				// check the current window intersects the cumulative region
+				int if_intersect = FindIntersectingRegion4(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, st_point); 
+				if (!if_intersect || seed_count <= 2) {
+					Free.x = OldFree.x;
+					Free.y = OldFree.y;
+				}
+				else	{	// current window contains the st_point
+					Free.x = st_point.x;
+					Free.y = st_point.y;
+					float min_cost = FindMinCostInIntersectingBoundary(IMAGE_X, IMAGE_Y, 
+						OLD_MASK_SIZE, MASK_SIZE, Free, OldFree);
+					ClearNodes2(MASK_SIZE, MASK_SIZE, item);
+					MasktoNodes3(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, image, 
+						tmp_img, min_cost, max_grad, gradient, 
+						gradient, item);
+					Intelligent_Scissor2_Oriented(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+					SaveCumulativeNextPxl(Free, seed, next_pxl, cumulative_next_pxl);
+				}
+				OldFree.x = Free.x;
+				OldFree.y = Free.y;
+				OLD_MASK_SIZE = MASK_SIZE;
+			}		
+			ReleaseCapture();
+			/// Draw the boundary segment on Double Buffer and transfer it to screen
+			//////////////////////////////////////////////////////
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//ClearMemDC(&double_buffer);
+			//DrawBWireCumulativeMRSampledEdgeMemDC(&double_buffer, curve, cc-1, 255, 255, 0);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 0, 0, 255);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, curve[cc], 4, Free, seed, 255, 255, 0);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], 4, Free, seed, 255, 255, 0);
+			DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 0, 0, 255);
+			//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0); // yellow
+			//DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0); // yellow
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, disp_x, disp_y, SRCCOPY);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			status = IPEN_INTERNAL;
+			break;
+		case FIS:
+			ReleaseCapture();
+			status = TWOD;
+			break;
+		case ACTIVATED2_:
+			// second button pressed : status = FIS
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			if (seed.x != st_point.x || seed.y != st_point.y) { // if the current seed is not the st_point
+				ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, tmp_img);
+				// check the current window intersects the cumulative region
+				int if_intersect = FindIntersectingRegion4(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, st_point); 
+				if (!if_intersect || seed_count <= 2) {
+					Free.x = OldFree.x;
+					Free.y = OldFree.y;
+				}
+				else	{	// current window contains the st_point
+					Free.x = st_point.x;
+					Free.y = st_point.y;
+					float min_cost = FindMinCostInIntersectingBoundary(IMAGE_X, IMAGE_Y, 
+						OLD_MASK_SIZE, MASK_SIZE, Free, OldFree);
+					ClearNodes2(MASK_SIZE, MASK_SIZE, item);
+					MasktoNodes3(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, image, 
+						tmp_img, min_cost, max_grad, gradient, 
+						gradient, item);
+					Intelligent_Scissor2(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+					SaveCumulativeNextPxl(Free, seed, next_pxl, cumulative_next_pxl);
+				}
+				OldFree.x = Free.x;
+				OldFree.y = Free.y;
+				OLD_MASK_SIZE = MASK_SIZE;
+			}		
+			ReleaseCapture();
+			/// Draw the boundary segment on Double Buffer and transfer it to screen
+			//////////////////////////////////////////////////////
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			/////////////////////////////////////////////////////////////////////
+			DrawEdgeMemDC(&double_buffer, Free, seed, 255, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			
+			status = NO_STATUS;
+			break;
+		
+	}
+}
+
+void CCubeView::button_released(int button, int x, int y)
+{
+	CClientDC dc(this);
+	int cur_level;
+
+	switch (status) {
+		case PIXEL_SAMPLE:
+		case PIXEL_SAMPLE_ACTIVATED:
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			UpdatePixelDist(pix_d[pix_d_count], pixel_mark);
+			pix_d[pix_d_count].print();
+			status = PIXEL_SAMPLE;
+			break;
+		case EDGE_SAMPLE:
+		case EDGE_SAMPLE_ACTIVATED:
+			//off_edge.update(cur_edge);
+			UpdateEdgeDist(off_edge, off_mark);
+			off_edge.print();
+			status = EDGE_SAMPLE;
+			break;
+		case EDGE_TUNE:
+			KillTimer(2);
+			status2 = NO_STATUS;
+			break;
+		case EDGE_PAINT:
+		case EDGE_PAINT_ACTIVATED:
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			status = EDGE_PAINT;
+			break;
+		case STROKE_EDIT_INDIV_ACTIVATED2:  
+			if (button == 1) {
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//UpdateEditedCurve(ip[min_ip].curve[min_curve]);
+				//UpdateEditedCurve2(ip[min_ip].curve[min_curve]);
+				////////////////////////////////////////////////////
+				// update only MR control points
+				//UpdateEditedCurve3(ip[min_ip].curve[min_curve]);
+
+				cur_level = ip[min_ip].curve[min_curve].cur_level;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+				ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 255, 255, 0);
+				//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+				//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+				status = STROKE_EDIT_INDIV_ACTIVATED;
+			}
+			break;
+		case STROKE_EDIT_ACTIVATED2:  
+			if (button == 1) {
+				//TRACE("CURVE_EDIT_ACTIVATED Button 1 released\n");
+				//status = NO_STATUS;
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				//UpdateEditedCurve(ip[min_ip].curve[min_curve]);
+				UpdateEditedCurve2(ip[min_ip].curve[min_curve]);
+				//CopyEditedCurve(curve.GetCurLevel(), tmp_curve, curve);
+				//DrawFilteredMRCurveMemDC(&memDC, curve, curve.GetCurLevel(), 255, 0, 0);
+				
+				//seeds[seed_count].x = seed.x;
+				//seeds[seed_count].y = seed.y;
+				DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+				ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+				ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+				//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+				status = STROKE_EDIT_ACTIVATED;
+			}
+			break;
+		case CURVE_EDIT_ACTIVATED:  
+			if (button == 1) {
+				TRACE("CURVE_EDIT_ACTIVATED Button 1 released\n");
+				//status = NO_STATUS;
+				CopyEditedCurve(curve.GetCurLevel(), tmp_curve, curve);
+				DrawFilteredMRCurveMemDC(&memDC, curve, curve.GetCurLevel(), 255, 0, 0);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				status = CURVE_EDIT;
+				//seeds[seed_count].x = seed.x;
+				//seeds[seed_count].y = seed.y;
+			}
+			break;
+		case FREEHAND_ACTIVATED:
+			if (button == 1) {
+				TRACE("FREEHAND_CURVE Button 1 released\n");
+				//status = NO_STATUS;
+				status = FREEHAND_CURVE;
+				//seeds[seed_count].x = seed.x;
+				//seeds[seed_count].y = seed.y;
+			}
+			break;
+		case TWOD:
+			switch(button){	
+				case 1:
+					vanish.y = (float)((IMAGE_Y-1) - y);
+					break;
+				case 2:	// button release
+ 					which.obj=0;  
+					isPnt=0;         
+					pcount = 1;
+					break;
+				case 3:
+					break;
+			}
+			break;
+		case RENDER:   // if status == RENDER
+			switch(button){
+				case 1:
+					movement.x=x-movement.x;
+					movement.y=(IMAGE_Y-y)-movement.y;
+					camera.x -=movement.x/2;
+					camera.z -=vanVec.z*movement.y/2;
+					camera.y -=vanVec.y*movement.y/2;
+					break;
+			}
+			break;
+		case PANORAMIC_RENDER:
+			switch(button){	
+				case 1:
+					KillTimer(2);
+					break;
+				case 2:
+					KillTimer(3);
+					break;
+			}
+			break;
+	}
+}
+
+void CCubeView::mouse_motion(UINT flag, int x, int y)
+{
+	int if_intersect;
+	static int old_snapped;
+	CPen pen, *pOldPen;
+	int cur_level;
+			
+	CClientDC dc(this);
+
+	switch (status) {
+		case PIXEL_SAMPLE_ACTIVATED:  
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			gau_w = MakeGaussMask(cur_sigma, gau);
+			max_grad2 = LocalCanny(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray, gray2, gau_w);
+			//DrawGrayImage(double_buffer, IMAGE_X, IMAGE_Y, gray2);
+			DrawGrayImageMask(double_buffer, IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray2);
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//status = EDGE_PAINT_ACTIVATED;
+			break;	
+		case EDGE_SAMPLE_ACTIVATED:
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+			if (gray2[seed.x][seed.y] == 0) { // edge pixel
+				//TRACE("I'm here\n");
+				//cur_edge.zero();
+				EdgeColor(memDC, gray2, seed.x, seed.y, 255, 0, 0);
+				//cur_edge.print();
+				//off_edge.update(cur_edge);
+			}
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			status = EDGE_SAMPLE_ACTIVATED;
+			break;
+		case EDGE_PAINT:
+		case EDGE_TUNE:
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+			if (status2 == NO_STATUS) {
+				double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+				DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+				dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			}
+			break;
+		case EDGE_PAINT_ACTIVATED:  // moust motion
+			seed.x = x;
+			seed.y = (IMAGE_Y-1)-y;
+			st_point.x = seed.x;	st_point.y = seed.y;
+			//dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			//DrawPointMemDC(&double_buffer, x, y, FIS_POINT_SIZE, 0, 255, 0);
+			//double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &dc, 0, 0, SRCCOPY);
+			
+			//DrawGrayImage(dc, IMAGE_X, IMAGE_Y, gray);
+			//TRACE("I'm here!\n");
+
+			OldFree.x = seed.x;
+			OldFree.y = seed.y;
+			gau_w = MakeGaussMask(cur_sigma, gau);
+			max_grad2 = LocalCanny(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray, gray2, gau_w);
+			//DrawGrayImage(double_buffer, IMAGE_X, IMAGE_Y, gray2);
+			DrawGrayImageMask(double_buffer, IMAGE_X, IMAGE_Y, MASK_SIZE, seed, gray2);
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, x, y, 255, 0, 255);
+			//NonmaxSuppressMask(IMAGE_X, IMAGE_Y);
+			//SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, IMAGE_Y, MASK_SIZE, seed, boundary2, boundary);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//status = EDGE_PAINT_ACTIVATED;
+			break;	
+		case STROKE_EDIT: // mouse motion
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			FindCurve(ip, pc, Free, min_ip, min_curve);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+			break;
+		case STROKE_EDIT_INDIV: // mouse motion
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			FindCurve(ip, pc, Free, min_ip, min_curve);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			cur_level = ip[min_ip].curve[min_curve].cur_level;
+			ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 0, 255, 0);
+			//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			//TRACE("min_ip = %d, min_curve = %d\n", min_ip, min_curve);
+			break;
+		case STROKE_EDIT_ACTIVATED: // mouse motion
+			Free.x = x;
+			//Free.y = (IMAGE_Y - 1) - y;
+			Free.y = y;
+			//FindCurve(ip, pc, Free, min_ip, min_curve);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+			////////////////////////////////////////////////////
+			// Find the closest contrl point and show it
+			idx = ip[min_ip].curve[min_curve].FindCntPnt(Free.x, Free.y);
+			ip[min_ip].curve[min_curve].DrawCntPnt(&double_buffer, idx, 0, 255, 255);
+			/////////////////////////////////////////////////////////////////
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			break;
+		case STROKE_EDIT_INDIV_ACTIVATED: // mouse motion
+			Free.x = x;
+			//Free.y = (IMAGE_Y - 1) - y;
+			Free.y = y;
+			//FindCurve(ip, pc, Free, min_ip, min_curve);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			cur_level = ip[min_ip].curve[min_curve].cur_level;
+			ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 0, 255, 0);
+			ip[min_ip].curve[min_curve].DrawMRCntPnts(&double_buffer, cur_level, 255, 0, 0);
+			//ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 0);
+			//ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+			////////////////////////////////////////////////////
+			// Find the closest contrl point and show it
+            //idx = ip[min_ip].curve[min_curve].FindCntPnt(Free.x, Free.y);
+			//ip[min_ip].curve[min_curve].DrawCntPnt(&double_buffer, idx, 0, 255, 255);
+			idx = ip[min_ip].curve[min_curve].FindMRCntPnt(cur_level, Free.x, Free.y);
+			ip[min_ip].curve[min_curve].DrawMRCntPnt(&double_buffer, cur_level, idx, 0, 255, 255);
+			
+			/////////////////////////////////////////////////////////////////
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+			break;
+		case STROKE_EDIT_ACTIVATED2:  // mouse motion
+			//TRACE("CURVE_EDIT_ACTIVATED mouse motion\n");
+			Free.x = x;
+			Free.y = y;
+			//pnts.insert(pnts.end(), seed);
+			//ClearMemDC(&memDC);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			/////////////////////////////////////////////////////////////
+			// Move the selected control point
+			ip[min_ip].curve[min_curve].SetCntPnt(idx, Free.x, Free.y); 
+			///////////////////////////////////////////////////////////
+			ip[min_ip].curve[min_curve].DrawCurve(&double_buffer, 0, 255, 255);
+			ip[min_ip].curve[min_curve].DrawCntPnts(&double_buffer, 255, 0, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			break;
+		case STROKE_EDIT_INDIV_ACTIVATED2:  // mouse motion
+			//TRACE("CURVE_EDIT_ACTIVATED mouse motion\n");
+			Free.x = x;
+			Free.y = y;
+			//pnts.insert(pnts.end(), seed);
+			//ClearMemDC(&memDC);
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc+1, 1, 0, 0, 255);
+			/////////////////////////////////////////////////////////////
+			// Move the selected control point
+			cur_level = ip[min_ip].curve[min_curve].cur_level;
+			//ip[min_ip].curve[min_curve].SetCntPnt(idx, Free.x, Free.y); 
+			ip[min_ip].curve[min_curve].SetMRCntPnt(cur_level, idx, Free.x, Free.y); 
+			///////////////////////////////////////////////////////////
+			ip[min_ip].curve[min_curve].DrawMRCurve(&double_buffer, cur_level, 0, 255, 255);
+			ip[min_ip].curve[min_curve].DrawMRCntPnts(&double_buffer, cur_level, 255, 0, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			break;
+		case ACTIVATED_IPEN_EXTERNAL: // mouse motion
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, tmp_img);
+			if_intersect = FindIntersectingRegion3(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, boundary, tmp_img);
+			if (!if_intersect)	{
+				Free.x = OldFree.x;
+				Free.y = OldFree.y;
+			}
+			else	{	// intersect 
+				float min_cost = FindMinCostInIntersectingBoundary(IMAGE_X, IMAGE_Y, 
+					OLD_MASK_SIZE, MASK_SIZE, Free, OldFree);
+				ClearNodes2(MASK_SIZE, MASK_SIZE, item);
+				MasktoNodes3AvoidingIntersection(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, image, tmp_img, min_cost, max_grad, 
+							gradient, gradient, cumulative_next_pxl, item);
+				//////////////////////////////////////////////////////////////////////////////////////////////////
+				
+				Intelligent_Scissor2(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+				ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, boundary2);
+				SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, 
+					IMAGE_Y, MASK_SIZE, Free, boundary2, boundary);
+			}
+			if (CheckIfInfiniteLoopExists(Free, seed)) {
+				Free.x = OldFree.x;
+				Free.y = OldFree.y;
+			}
+			
+			///////////////////////////////////////////////////////////////////////////////////
+			/// Draw the boundary segment on Double Buffer and transfer it to screen
+			//////////////////////////////////////////////////////
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			//DrawBWireCumulativeMRSampledEdgeMemDC(&double_buffer, curve, cc-1, 255, 255, 0);
+			//DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 0, 0, 255);
+			
+			/////////////////////////////////////////////////////////////////////
+			//DrawEdgeMemDC(&double_buffer, Free, seed, 0, 255, 255);
+			//DrawBWireEdgeMemDC(&double_buffer, curve, Free, seed, 0, 255, 255);
+			//DrawBWireSampledEdgeMemDC(&double_buffer, curve, Free, seed, 0, 255, 255);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, curve[cc], 4, Free, seed, 0, 255, 255);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 0, 255, 255);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 255, 255, 0);
+			DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 0, 0, 255);
+			//DrawBoxMemDC(&double_buffer, MASK_SIZE, Free.x, IMAGE_Y-1-Free.y, 255, 0, 255);
+			//DrawPointMemDC(&double_buffer, seed.x, IMAGE_Y-1-seed.y, FIS_POINT_SIZE, 0, 255, 0);
+			//DrawSeedsMemDC(&double_buffer, seed_count, 0, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			OLD_MASK_SIZE = MASK_SIZE;
+			break;		
+		case ACTIVATED_IPEN_INTERNAL: // mouse motion
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, tmp_img);
+			if_intersect = FindIntersectingRegion3(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, boundary, tmp_img);
+			if (!if_intersect)	{
+				Free.x = OldFree.x;
+				Free.y = OldFree.y;
+			}
+			else	{	// intersect 
+				float min_cost = FindMinCostInIntersectingBoundary(IMAGE_X, IMAGE_Y, 
+					OLD_MASK_SIZE, MASK_SIZE, Free, OldFree);
+				ClearNodes2(MASK_SIZE, MASK_SIZE, item);
+				MasktoNodes3AvoidingIntersection(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, image, tmp_img, min_cost, max_grad, 
+							gradient, gradient, cumulative_next_pxl, item);
+				//////////////////////////////////////////////////////////////////////////////////////////////////
+				
+				Intelligent_Scissor2_Oriented(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+				ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, boundary2);
+				SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, 
+					IMAGE_Y, MASK_SIZE, Free, boundary2, boundary);
+			}
+			if (CheckIfInfiniteLoopExists(Free, seed)) {
+				Free.x = OldFree.x;
+				Free.y = OldFree.y;
+			}
+			
+			///////////////////////////////////////////////////////////////////////////////////
+			/// Draw the boundary segment on Double Buffer and transfer it to screen
+			//////////////////////////////////////////////////////
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			//DrawBWireCumulativeMRSampledEdgeMemDC(&double_buffer, curve, cc-1, 255, 255, 0);
+			DrawIPenCumulativeMRSampledEdgeMemDC(&double_buffer, ip, pc, 1, 255, 255, 0);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, Free.x, IMAGE_Y-1-Free.y, 255, 0, 255);
+			/////////////////////////////////////////////////////////////////////
+			//DrawEdgeMemDC(&double_buffer, Free, seed, 0, 255, 255);
+			//DrawBWireEdgeMemDC(&double_buffer, curve, Free, seed, 0, 255, 255);
+			//DrawBWireSampledEdgeMemDC(&double_buffer, curve, Free, seed, 0, 255, 255);
+			//DrawBWireMRSampledEdgeMemDC(&double_buffer, curve[cc], 4, Free, seed, 0, 255, 255);
+			DrawBWireMRSampledEdgeMemDC(&double_buffer, ip[pc].curve[ip[pc].cc], LEVEL_DOWN, Free, seed, 0, 255, 255);
+			DrawPointMemDC(&double_buffer, seed.x, IMAGE_Y-1-seed.y, FIS_POINT_SIZE, 0, 255, 0);
+			DrawSeedsMemDC(&double_buffer, seed_count, 0, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			OLD_MASK_SIZE = MASK_SIZE;
+			break;		
+		case CURVE_EDIT_ACTIVATED:  // button 1 pressed
+			TRACE("CURVE_EDIT_ACTIVATED mouse motion\n");
+			Free.x = x;
+			Free.y = y;
+			//pnts.insert(pnts.end(), seed);
+			//ClearMemDC(&memDC);
+			memDC.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			tmp_curve.SetCntPnt(idx, Free.x, Free.y);
+			tmp_curve.DrawCurve(&memDC, 0, 255, 255);
+			tmp_curve.DrawCntPnts(&memDC, 0, 255, 0);
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			break;
+		case FREEHAND_ACTIVATED:  // button 1 pressed
+			//SetCapture(); // SetCapture the Window until FIS ends
+			TRACE("FREEHAND_CURVE Button 1 moved\n");
+			Free.x = x;
+			//Free.y = (IMAGE_Y - 1) - y;
+			Free.y = y;
+			pnts.insert(pnts.end(), Free);
+
+			pen.CreatePen(PS_SOLID, (int)3, RGB(0, 0, 255));
+			pOldPen = (CPen *)memDC.SelectObject(&pen);
+
+			memDC.MoveTo(OldFree.x, OldFree.y);
+			memDC.LineTo(Free.x, Free.y);
+
+			memDC.SelectObject(pOldPen);
+			pen.DeleteObject(); 
+
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			//seeds[seed_count].x = seed.x;
+			//seeds[seed_count].y = seed.y;
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			break;
+		case TWOD: // mouse motion
+			if(flag & MK_LBUTTON){	
+					vanish.y = (float)((IMAGE_Y-1) - y);
+					CClientDC dc(this);
+					dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+					pen.CreatePen(PS_SOLID, 3, RGB(0, 255, 255));
+					pOldPen = (CPen *)dc.SelectObject(&pen);
+					dc.MoveTo(0, y);
+					dc.LineTo(IMAGE_X-1, y);
+					DrawGridLinesDC(&dc,  y, 1, 255, 255, 255);
+					dc.SelectObject(pOldPen);
+			}
+			else if(flag & MK_RBUTTON){
+					fg[which.obj][cur_t][which.pnt].y = (float)((IMAGE_Y-1) - y);
+			}
+			break;
+		case RENDER:
+			if (flag & MK_LBUTTON){
+				movement.x = x-movement.x;
+				movement.y = ((IMAGE_Y-1) - y) - movement.y;
+				camera.x -= movement.x/2;
+				camera.z -= vanVec.z * movement.y/2;
+				camera.y -= vanVec.y * movement.y/2;
+				movement.x = (float)(x);
+				movement.y = (float)((IMAGE_Y-1) - y);
+			}
+			Invalidate(FALSE);
+			break;
+		case ACTIVATED2_: // mouse motion
+			Free.x = x;
+			Free.y = (IMAGE_Y - 1) - y;
+			ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, tmp_img);
+			if_intersect = FindIntersectingRegion3(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, boundary, tmp_img);
+			if (!if_intersect)	{
+				Free.x = OldFree.x;
+				Free.y = OldFree.y;
+			}
+			else	{	// intersect 
+				float min_cost = FindMinCostInIntersectingBoundary(IMAGE_X, IMAGE_Y, 
+					OLD_MASK_SIZE, MASK_SIZE, Free, OldFree);
+				ClearNodes2(MASK_SIZE, MASK_SIZE, item);
+				MasktoNodes3AvoidingIntersection(IMAGE_X, IMAGE_Y, MASK_SIZE, Free, image, tmp_img, min_cost, max_grad, 
+							gradient, gradient, cumulative_next_pxl, item);
+				//////////////////////////////////////////////////////////////////////////////////////////////////
+				
+				Intelligent_Scissor2(MASK_SIZE, IMAGE_X, IMAGE_Y, item);
+				ClearRegion(IMAGE_X, IMAGE_Y, OLD_MASK_SIZE, OldFree, boundary2);
+				SaveCurrentRegionToPreviousAndUpdateCumulative(IMAGE_X, 
+					IMAGE_Y, MASK_SIZE, Free, boundary2, boundary);
+			}
+			if (CheckIfInfiniteLoopExists(Free, seed)) {
+				Free.x = OldFree.x;
+				Free.y = OldFree.y;
+			}
+			
+			/// Draw the boundary segment on Double Buffer and transfer it to screen
+			//////////////////////////////////////////////////////
+			double_buffer.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+			DrawCumulativeEdgeMemDC(&double_buffer, seed, st_point, 255, 255, 0);
+			DrawBoxMemDC(&double_buffer, MASK_SIZE, Free.x, IMAGE_Y-1-Free.y, 255, 0, 255);
+			/////////////////////////////////////////////////////////////////////
+			DrawEdgeMemDC(&double_buffer, Free, seed, 0, 255, 255);
+			DrawPointMemDC(&double_buffer, seed.x, IMAGE_Y-1-seed.y, FIS_POINT_SIZE, 0, 255, 0);
+			DrawSeedsMemDC(&double_buffer, seed_count, 0, 255, 0);
+			////////////// transfer to screen everything drawn lately
+			dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &double_buffer, 0, 0, SRCCOPY);
+
+			OldFree.x = Free.x;
+			OldFree.y = Free.y;
+			OLD_MASK_SIZE = MASK_SIZE;
+			break;
+		
+	}
+}
+
+
+/*
+void MakeSeedMap()
+{
+	int k;
+
+	ClearImage(IMAGE_X, IMAGE_Y, seed_map);
+
+	for (k = 0; k < seed_count; k++) {
+		// seed_map starts from 1 
+		seed_map[seeds[k].x][seeds[k].y] = k+1;
+	}
+}
+*/
+
+

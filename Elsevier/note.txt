@@ -1,0 +1,8 @@
+TITLE	: Non-photorealistic Computer Graphics
+AUTHORS	: Thomas Strothotte, and Stefan Schlechtweg
+
+Note:
+Introduction:
+Over 30 years, computer graphics researchers tries to achieve photorealistic images. Ivan Sutherland was the one pioneer in creating photorealistic computer generated images, working at early 1960s. Photorealistic computer graphics is essentially, the attempts to imitate real life picture using computer that would be normally taken by using another machine such as camera. 
+
+Non-photorealistic rendering (NPR) is process using computer to generate images from photorealistic images to look like hand-drawn images by an artist. 

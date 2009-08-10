@@ -1,0 +1,54 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2-1}{\ignorespaces Sample of gaussian filter}}{8}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input image}}}{8}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Gaussian with $\sigma = 1.0$}}}{8}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {Gaussian with $\sigma = 1.6$}}}{8}
+\contentsline {figure}{\numberline {2-2}{\ignorespaces Difference of Gaussian filtering}}{9}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {DoG Kernel}}}{9}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Gaussian components for DoG}}}{9}
+\contentsline {figure}{\numberline {2-3}{\ignorespaces Difference-of-Gaussian}}{10}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Rock and Boat}}}{10}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Baboon}}}{10}
+\contentsline {figure}{\numberline {2-4}{\ignorespaces Flow-based DoG Kernel}}{12}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {FDoG Kernel}}}{12}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Gaussian components for DoG}}}{12}
+\contentsline {figure}{\numberline {2-5}{\ignorespaces Difference-of-Gaussian}}{13}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input image}}}{13}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{13}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{13}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3-1}{\ignorespaces Weakness of FDoG}}{14}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{14}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{14}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{14}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4-1}{\ignorespaces Image Segmentation}}{17}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input image}}}{17}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Polarity-based image segment; white indicates isotropic area, black indicates anisotropic area, and gray indicates area with low gradient magnitude}}}{17}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5-1}{\ignorespaces Adaptive-DoG}}{18}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{18}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Adaptive-DoG}}}{18}
+\contentsline {figure}{\numberline {5-2}{\ignorespaces Boat and Rock}}{19}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{19}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Polarity Segment}}}{19}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {Adaptive-DoG}}}{19}
+\contentsline {figure}{\numberline {5-3}{\ignorespaces A Boat in Beach}}{20}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{20}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{20}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{20}
+\contentsline {subfigure}{\numberline {(d)}{\ignorespaces {Adaptive-DoG}}}{20}
+\contentsline {figure}{\numberline {5-4}{\ignorespaces Sand Dollar}}{21}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{21}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{21}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{21}
+\contentsline {subfigure}{\numberline {(d)}{\ignorespaces {Adaptive-DoG}}}{21}
+\contentsline {figure}{\numberline {5-5}{\ignorespaces Boats at the Bay}}{22}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{22}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{22}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{22}
+\contentsline {subfigure}{\numberline {(d)}{\ignorespaces {Adaptive-DoG}}}{22}
+\contentsline {subfigure}{\numberline {(e)}{\ignorespaces {Adaptive-DoG Thin}}}{22}
+\contentsline {subfigure}{\numberline {(f)}{\ignorespaces {Canny's Edge Detection}}}{22}
+\addvspace {10\p@ }

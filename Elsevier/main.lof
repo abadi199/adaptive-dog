@@ -1,0 +1,48 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces Sample of gaussian filter}}{6}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input image}}}{6}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Gaussian with $\sigma = 1.0$}}}{6}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {Gaussian with $\sigma = 1.6$}}}{6}
+\contentsline {figure}{\numberline {2}{\ignorespaces Difference of Gaussian filtering}}{7}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {DoG Kernel}}}{7}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Gaussian components for DoG}}}{7}
+\contentsline {figure}{\numberline {3}{\ignorespaces Difference-of-Gaussian}}{8}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Rock and Boat}}}{8}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Baboon}}}{8}
+\contentsline {figure}{\numberline {4}{\ignorespaces Flow-based DoG Kernel}}{10}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {FDoG Kernel}}}{10}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Gaussian components for DoG}}}{10}
+\contentsline {figure}{\numberline {5}{\ignorespaces Difference-of-Gaussian}}{12}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input image}}}{12}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{12}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{12}
+\contentsline {figure}{\numberline {6}{\ignorespaces Weakness of FDoG}}{13}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{13}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{13}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{13}
+\contentsline {figure}{\numberline {7}{\ignorespaces Image Segmentation}}{16}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input image}}}{16}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Polarity-based image segment; white indicates isotropic area, black indicates anisotropic area, and gray indicates area with low gradient magnitude}}}{16}
+\contentsline {figure}{\numberline {8}{\ignorespaces Adaptive-DoG}}{18}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{18}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Adaptive-DoG}}}{18}
+\contentsline {figure}{\numberline {9}{\ignorespaces Boat and Rock}}{19}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{19}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {Polarity Segment}}}{19}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {Adaptive-DoG}}}{19}
+\contentsline {figure}{\numberline {10}{\ignorespaces A Boat in Beach}}{20}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{20}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{20}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{20}
+\contentsline {subfigure}{\numberline {(d)}{\ignorespaces {Adaptive-DoG}}}{20}
+\contentsline {figure}{\numberline {11}{\ignorespaces Sand Dollar}}{21}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{21}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{21}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{21}
+\contentsline {subfigure}{\numberline {(d)}{\ignorespaces {Adaptive-DoG}}}{21}
+\contentsline {figure}{\numberline {12}{\ignorespaces Boats at the Bay}}{22}
+\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {Input Image}}}{22}
+\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {DoG}}}{22}
+\contentsline {subfigure}{\numberline {(c)}{\ignorespaces {FDoG}}}{22}
+\contentsline {subfigure}{\numberline {(d)}{\ignorespaces {Adaptive-DoG}}}{22}
+\contentsline {subfigure}{\numberline {(e)}{\ignorespaces {Adaptive-DoG Thin}}}{22}
+\contentsline {subfigure}{\numberline {(f)}{\ignorespaces {Canny's Edge Detection}}}{22}

@@ -1,0 +1,102 @@
+\begin{thebibliography}{10}
+
+\bibitem{belongie98}
+S.~Belongie, C.~Carson, H.~Greenspan, and J.~Malik.
+\newblock Color- and texture-based image segmentation using em and its
+  application to content-based image retrieval.
+\newblock {\em Computer Vision, 1998. Sixth International Conference on}, pages
+  675--682, Jan 1998.
+
+\bibitem{canny86}
+John Canny.
+\newblock A computational approach to edge detection.
+\newblock {\em Pattern Analysis and Machine Intelligence, IEEE Transactions
+  on}, PAMI-8(6):679--698, Nov. 1986.
+
+\bibitem{decarlo03}
+Doug DeCarlo, Adam Finkelstein, Szymon Rusinkiewicz, and Anthony Santella.
+\newblock Suggestive contours for conveying shape.
+\newblock {\em ACM Trans. Graph.}, 22(3):848--855, 2003.
+
+\bibitem{deussen00}
+Oliver Deussen, Stefan Hiller, Cornelius~Van Overveld, and Thomas Strothotte.
+\newblock Floating points: A method for computing stipple drawings.
+\newblock {\em Computer Graphics Forum}, 19:40--51, 2000.
+
+\bibitem{gooch04}
+Bruce Gooch, Erik Reinhard, and Amy Gooch.
+\newblock Human facial illustrations: Creation and psychophysical evaluation.
+\newblock {\em ACM Trans. Graph.}, 23(1):27--44, 2004.
+
+\bibitem{hays04}
+James Hays and Irfan Essa.
+\newblock Image and video based painterly animation.
+\newblock pages 113--120, 2004.
+
+\bibitem{hertzmann98}
+Aaron Hertzmann.
+\newblock Painterly rendering with curved brush strokes of multiple sizes.
+\newblock In {\em SIGGRAPH '98: Proceedings of the 25th annual conference on
+  Computer graphics and interactive techniques}, pages 453--460, New York, NY,
+  USA, 1998. ACM.
+
+\bibitem{kang07}
+Henry Kang, Seungyong Lee, and Charles~K. Chui.
+\newblock Coherent line drawing.
+\newblock {\em NPAR '07: Proceedings of the 5th international symposium on
+  Non-photorealistic animation and rendering}, pages 43--50, 2007.
+
+\bibitem{litwinowicz97}
+Peter Litwinowicz.
+\newblock Processing images and video for an impressionist effect.
+\newblock pages 407--414, 1997.
+
+\bibitem{marr-hildreth80}
+D.~Marr and E.~Hildreth.
+\newblock Theory of edge detection.
+\newblock {\em Proceedings of the Royal Society of London. Series B, Biological
+  Sciences,}, 207(1167):187--217, February 1980.
+
+\bibitem{emily08}
+Image Metrics and USC~Institute for Creative Technologies Graphics~Lab.
+\newblock High resolution face scanning for "digital emily".
+\newblock \url{http://http://gl.ict.usc.edu/Research/DigitalEmily/}, 2008.
+
+\bibitem{salisbury94}
+Michael~P. Salisbury, Sean~E. Anderson, Ronen Barzel, and David~H. Salesin.
+\newblock Interactive pen-and-ink illustration.
+\newblock pages 101--108, 1994.
+
+\bibitem{schumann96}
+Jutta Schumann, Thomas Strothotte, Stefan Laser, and Andreas Raab.
+\newblock Assessing the effect of non-photorealistic rendered images in cad.
+\newblock pages 35--41, 1996.
+
+\bibitem{secord02}
+Adrian Secord.
+\newblock Weighted voronoi stippling.
+\newblock pages 37--43, 2002.
+
+\bibitem{sousa03}
+Mario~Costa Sousa and Przemyslaw Prusinkiewicz.
+\newblock A few good lines: Suggestive drawing of 3d models.
+\newblock {\em Computer Graphics Forum}, 22(3):381--390, September 2003.
+
+\bibitem{strothotte94}
+T.~Strothotte, B.~Preim, A.~Raab, J.~Schumann, and D.~R. Forsey.
+\newblock How to render frames and influence people.
+\newblock 13(3):455--466, 1994.
+\newblock Special issue on Eurographics~'94.
+
+\bibitem{strothotte02}
+Thomas Strothotte and Stefan Schlechtweg.
+\newblock {\em Non-Photorealistic Computer Graphics: Modeling, Rendering and
+  Animation}.
+\newblock Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, June 2002.
+
+\bibitem{winkenbach94}
+Georges Winkenbach and David~H. Salesin.
+\newblock Computer-generated pen-and-ink illustration.
+\newblock pages 91--100, 1994.
+
+\end{thebibliography}

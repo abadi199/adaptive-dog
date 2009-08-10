@@ -1,0 +1,381 @@
+// NameDialog.cpp : implementation file
+//
+
+#include "stdafx.h"
+#include "Cube.h"
+#include "NameDialog.h"
+#include ".\namedialog.h"
+
+#include "cubedoc.h"
+#include ".\cubeview.h"
+
+#include "globals.h"
+
+
+// NameDialog dialog
+
+IMPLEMENT_DYNAMIC(NameDialog, CDialog)
+NameDialog::NameDialog(CWnd* pParent /*=NULL*/)
+	: CDialog(NameDialog::IDD, pParent)
+	, m_Paint(false)
+	, m_paint_group(0)
+	, m_scale_group(0)
+{
+}
+
+NameDialog::~NameDialog()
+{
+}
+
+void NameDialog::DoDataExchange(CDataExchange* pDX)
+{
+	CDialog::DoDataExchange(pDX);
+	//DDX_Control(pDX, IDC_SCALE_VAL, m_scale_val);
+	DDX_Control(pDX, IDC_SCROLLBAR1, m_Scale_Scroll);
+	//DDX_Control(pDX, IDCANCEL, m_Paint_radio);
+	//DDX_Control(pDX, IDC_CHECK1, m_Paint_radio2);
+	//DDX_Control(pDX, IDC_SLIDER1, m_slider);
+	DDX_Control(pDX, IDC_SCROLLBAR_HTHRES, m_scrollbar_hthres);
+	DDX_Control(pDX, IDC_SCROLLBAR_BRUSH, m_scrollbar_brush);
+	DDX_Control(pDX, IDC_SCROLLBAR_LTHRES, m_scrollbar_lthres);
+}
+
+
+BEGIN_MESSAGE_MAP(NameDialog, CDialog)
+	ON_BN_CLICKED(IDC_BOOST, OnBnClickedBoost)
+	//ON_BN_CLICKED(IDC_PAINT, OnBnClickedPaint)
+	//ON_BN_CLICKED(IDC_CONNECT, OnBnClickedConnect)
+	ON_BN_CLICKED(IDC_PAINT, OnBnClickedPaint)
+	ON_WM_HSCROLL()
+	ON_BN_CLICKED(IDC_GLOBAL_CANNY, OnBnClickedGlobalCanny)
+	ON_BN_CLICKED(IDC_SCALE, OnBnClickedScale)
+	ON_BN_CLICKED(IDC_HTHRES, OnBnClickedHthres)
+	ON_BN_CLICKED(IDC_BRUSH, OnBnClickedBrush)
+	ON_BN_CLICKED(IDC_LTHRES, OnBnClickedLthres)
+	ON_BN_CLICKED(IDC_SAMPLE, OnBnClickedSample)
+	ON_BN_CLICKED(IDC_PICK, OnBnClickedPick)
+	ON_BN_CLICKED(IDC_SAMPLE_PIXELS, OnBnClickedSamplePixels)
+	ON_BN_CLICKED(IDC_SEGMENT, OnBnClickedSegment)
+	ON_BN_CLICKED(IDC_NONMAX, OnBnClickedNonmax)
+END_MESSAGE_MAP()
+
+
+// NameDialog message handlers
+BOOL NameDialog::OnInitDialog()
+{
+	// TODO: Add your control notification handler code here
+	CDialog::OnInitDialog();
+
+	m_paint_group = 0;
+	m_scale_group = 0; // not selected
+
+	//m_Paint_radio2.SetCheck(BST_CHECKED); // check box
+	//m_Paint_radio.SetCheck(BST_CHECKED);
+
+	/////////////////////
+	// original setting
+	//cur_sigma = 1.0;
+	//hi_thres = 0.1;
+	//lo_thres = 0.08;
+	/////////////////////
+	// setting for distance field
+	//cur_sigma = 0.8;
+	//hi_thres = 0.08;
+	//lo_thres = 0.05;
+	/////////////////////
+	// setting for painting
+	cur_sigma = 1.0;
+	hi_thres = 0.1;
+	lo_thres = 0.05;
+	/////////////////////
+	// setting for cartoon
+	//cur_sigma = 0.6;
+	//hi_thres = 0.05;
+	//lo_thres = 0.02;
+	
+	
+	////////////////////
+	// setting for statue foreground
+	//cur_sigma = 0.8;
+	//hi_thres = 0.21;
+	//lo_thres = 0.16;
+	////////////////////
+	//MASK_SIZE = 21;
+	MASK_SIZE = 81;
+	//factor1 = 2.5;
+	factor1 = 1.0;
+	factor2 = 2.0;
+	max_cur_sigma = 5.0;
+	max_hi_thres = 0.3;
+	max_lo_thres = 0.3;
+	MIN_MASK_SIZE = 11;
+	MAX_MASK_SIZE = 101;
+
+	m_Scale_Scroll.SetScrollRange(0, (int)(max_cur_sigma*10), TRUE); // in fact, [0.0, 9.0]
+	m_scrollbar_hthres.SetScrollRange(0, (int)(max_hi_thres*100), TRUE); // in fact, [0.0, 1.0]
+	m_scrollbar_lthres.SetScrollRange(0, (int)(max_lo_thres*100), TRUE); // in fact, [0.0, 1.0]
+	m_scrollbar_brush.SetScrollRange(MIN_MASK_SIZE, MAX_MASK_SIZE, TRUE); // in fact, [11, 101]
+	
+	m_Scale_Scroll.SetScrollPos((int)(cur_sigma*10)); // initial position
+	m_scrollbar_hthres.SetScrollPos((int)(hi_thres*100)); // initial position 0.1
+	m_scrollbar_lthres.SetScrollPos((int)(lo_thres*100)); // initial position 0.1
+	m_scrollbar_brush.SetScrollPos((int)(MASK_SIZE)); // initial position 0.1
+	
+	CString str_val;
+	str_val.Format("%.1f", cur_sigma);
+	SetDlgItemText(IDC_STATIC4, str_val);
+	str_val.Format("%.2f", hi_thres);
+	SetDlgItemText(IDC_STATIC_HTHRES, str_val);
+	str_val.Format("%.2f", lo_thres);
+	SetDlgItemText(IDC_STATIC_LTHRES, str_val);
+	str_val.Format("%d", MASK_SIZE);
+	SetDlgItemText(IDC_STATIC_BRUSH, str_val);
+	
+	//m_scale_val.SetWindowText("30");
+
+	//m_slider.SetScrollRange(SB_HORZ, 0, 90, TRUE);
+	//m_slider.SetScrollPos(SB_HORZ, 10, TRUE);
+	
+	m_Paint = true;
+	return TRUE;
+}
+
+void NameDialog::OnBnClickedPaint()
+{
+	// TODO: Add your control notification handler code here
+	//m_Paint = 0;
+	//AfxGetMainWnd()->SetWindowText("Curve Editor");
+	//CWnd* pwndMain = GetParent()->GetParent()->GetParent();
+	/////////////////////////////////////////////////////////////////////////
+	// This is how you gain access to the current CCubeView object!
+	//CWnd* pwndMain = AfxGetMainWnd();
+	//CCubeView* myView = (CCubeView*)((CFrameWnd*)pwndMain)->GetActiveView();
+	/////////////////////////////////////////////////////////////////////////
+	//POSITION pos = GetFirstViewPosition();
+
+	//TRACE("myView->test = %d\n", myView->test);
+	//myView->LoadImageBMP("beach_ball.bmp");
+	//myView->OnEdgePaint();
+	status = EDGE_PAINT;
+	//TRACE("m_Paint = Paint\n");
+	//TRACE("butten checked = %d\n", IsDlgButtonChecked(IDC_PAINT));
+	//m_Paint_radio.SetCheck(BST_CHECKED);
+	//m_Paint_radio2.SetCheck(BST_CHECKED); // real item
+
+	//TRACE("integer = %d\n", (CButton *)(GetDlgItem(IDC_PAINT))->GetCheck());
+	//TRACE("m_Paint_radio = %d\n", m_Paint_radio.GetCheck());
+	//TRACE("m_Paint_radio2 = %d\n", m_Paint_radio2.GetCheck());
+	//TRACE("butten checked = %d\n", IsDlgButtonChecked(IDC_PAINT));
+	//TRACE("butten checked = %d\n", dlg->IsDlgButtonChecked(IDC_PAINT));
+	
+}
+
+void NameDialog::OnBnClickedBoost()
+{
+	// TODO: Add your control notification handler code here
+	//m_Paint = 1;
+	status = EDGE_TUNE;
+	TRACE("m_Paint = Tune\n");
+}
+
+void NameDialog::OnBnClickedSample()
+{
+	// TODO: Add your control notification handler code here
+	status = EDGE_SAMPLE;
+	TRACE("m_Paint = Sample\n");
+}
+
+void NameDialog::OnBnClickedSamplePixels()
+{
+	// TODO: Add your control notification handler code here
+	status = PIXEL_SAMPLE;
+	TRACE("m_Paint = Pixel Sample\n");
+}
+
+
+void NameDialog::OnBnClickedPick()
+{
+	// TODO: Add your control notification handler code here
+	status = EDGE_PICK;
+	TRACE("m_Paint = Pick\n");
+}
+
+void NameDialog::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	// TODO: Add your message handler code here and/or call default
+
+	//CDialog::OnHScroll(nSBCode, nPos, pScrollBar);
+	//int CurPos = m_Scale_Scroll.GetScrollPos();
+	int CurPos;
+	//CurPos = (int)nPos;
+	//CurPos = m_Scale_Scroll.GetScrollPos();
+	CurPos = pScrollBar->GetScrollPos();
+	int max_val = pScrollBar->GetScrollLimit();
+	//TRACE("NUMBER = %d\n", pScrollBarGetDlgItemInt();)
+	//pScrollBar->
+	TRACE("CurPos = %d\n", CurPos);
+	TRACE("max_val = %d\n", max_val);
+
+	// Determine the new position of scroll box.
+	switch (nSBCode)
+	{
+		case SB_LEFT:      // Scroll to far left.
+			CurPos = 0;
+			break;
+		case SB_RIGHT:      // Scroll to far right.
+			CurPos = max_val;
+			break;
+		case SB_ENDSCROLL:   // End scroll.
+			break;
+		case SB_LINELEFT:      // Scroll left.
+			if (CurPos > 0)
+				CurPos--;
+			break;
+		case SB_LINERIGHT:   // Scroll right.
+			if (CurPos < max_val)
+				CurPos++;
+			break;
+		case SB_PAGELEFT:    // Scroll one page left.
+			{
+				// Get the page size. 
+				SCROLLINFO   info;
+				pScrollBar->GetScrollInfo(&info, SIF_ALL);
+				//m_Scale_Scroll.GetScrollInfo(&info, SIF_ALL);
+				if (CurPos > 0)
+					CurPos = max(0, CurPos - (int) info.nPage);
+			}
+			break;
+		case SB_PAGERIGHT:      // Scroll one page right
+			{
+				// Get the page size. 
+				SCROLLINFO   info;
+				pScrollBar->GetScrollInfo(&info, SIF_ALL);
+				//m_Scale_Scroll.GetScrollInfo(&info, SIF_ALL);
+				if (CurPos < max_val)
+					CurPos = min(max_val, CurPos + (int) info.nPage);
+			}
+			break;
+		case SB_THUMBPOSITION: // Scroll to absolute position. nPos is the position
+			CurPos = nPos;      // of the scroll box at the end of the drag operation.
+			break;
+		case SB_THUMBTRACK:   // Drag scroll box to specified position. nPos is the
+			CurPos = nPos;     // position that the scroll box has been dragged to.
+			break;
+	}
+		
+	///*
+	CString str_val;
+	//szPosition.Format("%.1f", CurPos);
+	//*/
+	//pScrollBar->SetScrollPos(CurPos);
+	// Determine the new position of scroll box.
+	TRACE("CurPos = %d\n", CurPos);
+	if (pScrollBar == GetDlgItem(IDC_SCROLLBAR1)) {
+		if (CurPos == 0) cur_sigma = 0.1;
+		else cur_sigma = (double)CurPos/10.0;
+		str_val.Format("%.1f", cur_sigma);
+		SetDlgItemText(IDC_STATIC4, str_val);
+		//TRACE("SCROLL BAR1\n");
+	}
+	else if (pScrollBar == GetDlgItem(IDC_SCROLLBAR_HTHRES)) {
+		hi_thres = (double)(CurPos/100.0);
+		//if (CurPos == 0) hi_thres = 0.0;
+		//else hi_thres = (double)CurPos/100.0;
+		str_val.Format("%.2f", hi_thres);
+		SetDlgItemText(IDC_STATIC_HTHRES, str_val);
+		//TRACE("SCROLL BAR2\n");
+	}
+	else if (pScrollBar == GetDlgItem(IDC_SCROLLBAR_LTHRES)) {
+		lo_thres = (double)(CurPos/100.0);
+		//if (CurPos == 0) hi_thres = 0.0;
+		//else hi_thres = (double)CurPos/100.0;
+		str_val.Format("%.2f", lo_thres);
+		SetDlgItemText(IDC_STATIC_LTHRES, str_val);
+		//TRACE("SCROLL BAR2\n");
+	}
+	else if (pScrollBar == GetDlgItem(IDC_SCROLLBAR_BRUSH)) {
+		MASK_SIZE = (CurPos%2) ? CurPos : CurPos + 1;
+		//if (CurPos == 0) hi_thres = 0.0;
+		//else hi_thres = (double)CurPos/100.0;
+		TRACE("MASK_SIZE = %d\n", MASK_SIZE);
+		str_val.Format("%d", MASK_SIZE);
+		SetDlgItemText(IDC_STATIC_BRUSH, str_val);
+		//TRACE("SCROLL BAR2\n");
+	}
+	
+	///*
+	
+	//*/
+
+	TRACE("cur_sigma = %f\n", cur_sigma);
+
+	
+	//UpdateWindow();
+
+	
+	TRACE("CurPos = %d\n", CurPos);
+	//m_Scale_Scroll.SetScrollPos(CurPos);
+	pScrollBar->SetScrollPos(CurPos);
+	//UpdateData();
+	//UpdateWindow();
+	//m_slider.SetScrollPos(SB_HORZ, CurPos, TRUE);
+	//m_Scale_Scroll.SetScrollPos(50);
+}
+
+void NameDialog::OnBnClickedGlobalCanny()
+{
+	// TODO: Add your control notification handler code here
+	CWnd* pwndMain = AfxGetMainWnd();
+	CCubeView* myView = (CCubeView*)((CFrameWnd*)pwndMain)->GetActiveView();
+
+	OnGlobalCanny(*(myView->GetDC()), IMAGE_X, IMAGE_Y, gray, gray2);
+}
+
+void NameDialog::OnBnClickedScale()
+{
+	// TODO: Add your control notification handler code here
+	m_scale_group = 1;
+}
+
+void NameDialog::OnBnClickedHthres()
+{
+	// TODO: Add your control notification handler code here
+	m_scale_group = 2;
+}
+
+void NameDialog::OnBnClickedLthres()
+{
+	// TODO: Add your control notification handler code here
+	m_scale_group = 3;
+}
+
+void NameDialog::OnBnClickedBrush()
+{
+	// TODO: Add your control notification handler code here
+	m_scale_group = 4;
+}
+
+void NameDialog::OnBnClickedSegment()
+{
+	// TODO: Add your control notification handler code here
+	CWnd* pwndMain = AfxGetMainWnd();
+	CCubeView* myView = (CCubeView*)((CFrameWnd*)pwndMain)->GetActiveView();
+
+	//OnGlobalCanny(*(myView->GetDC()), IMAGE_X, IMAGE_Y, gray, gray2);
+	OnGlobalSegment(*(myView->GetDC()));
+}
+
+void NameDialog::OnBnClickedNonmax()
+{
+	// TODO: Add your control notification handler code here
+	CWnd* pwndMain = AfxGetMainWnd();
+	CCubeView* myView = (CCubeView*)((CFrameWnd*)pwndMain)->GetActiveView();
+
+	//OnGlobalCanny(*(myView->GetDC()), IMAGE_X, IMAGE_Y, gray, gray2);
+	//OnGlobalSegment(*(myView->GetDC()));
+	NonmaximaSuppression(IMAGE_X, IMAGE_Y, gfield, G_mag, gray2, hi_thres);
+	EdgeThinning(memDC, gray2); // morphological edge thinning
+	DrawGrayImage(memDC, IMAGE_X, IMAGE_Y, gray2);
+	CDC& dc = *(myView->GetDC());
+	dc.BitBlt(0, 0, IMAGE_X, IMAGE_Y, &memDC, 0, 0, SRCCOPY);
+}
