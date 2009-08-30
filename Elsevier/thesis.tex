@@ -24,7 +24,7 @@ Most work in line drawing in NPR is based on edge detection or image segmentatio
 \section{Difference of Gaussian (DoG)} 
 Gooch et al. in their facial illustration system \cite{gooch04} were able to create some artistic results. They were able generate a caricature of a human face based on a photograph. Their method uses DoG filter, which was based on Marr-Hildreth's edge detection.
 
-The basic idea of DoG is to apply 2 Gaussian filters with different blur levels ($\sigma$). The second Gaussian filter uses a bigger blur radius to create blurrier image compared to the image produced by the first Gaussian filter. The Area close to edges will have more changes compared to area far from edges if applied to Gaussian filter with different blur level. The difference of intensity of each pixel of these two blurred images will be use by DoG to obtain edges, as shown in Figure ~\ref{fig:DoG_sample1}.
+The basic idea of DoG is to apply 2 Gaussian filters with different blur levels ($\sigma$). The second Gaussian filter uses a bigger blur radius to create blurrier image compared to the image produced by the first Gaussian filter. The area close to edge will have more change than area far from edge when applied to Gaussian filter with different $\sigma$. The difference of intensity of each pixel of these two blurred images will be use by DoG to obtain edges, as shown in Figure ~\ref{fig:DoG_sample1}.
 
 \begin{figure}[H]
 \centering
@@ -84,18 +84,17 @@ where $\sigma$ is the blur level. $G(i, \sigma)$ is used as weight factor on how
 	\caption{Difference of Gaussian filtering}\label{fig:image}
 \end{figure}
 
-This weight factor applied with $\sigma_{c}$ for each intensity of pixels along line $l_{x}$ started from $-T$ to $T$:
+This weight factor with $\sigma_{c}$ is first applied to each intensity of pixels along the $l_{x}$ line started from $-T$ to $T$:
 \begin{equation}
 	f(t, \sigma)=\int_{-T}^{T}G(t, \sigma)I(l_{x}(t))\,dt
 \end{equation}
-and using the value from $f(t, \sigma)$, we use 
-We then apply the same function along line $l_{y}$ starting from -S to S, and repeat this steps for every pixel on input image to produce a blurred image.
+and then apply the same function to the value from $f(t, \sigma)$ along $l_{y}$ line starting from -S to S, and repeat this step for every pixels on input image to produce the first blurred image.
 \begin{equation}
 	F(\mbox{x}, \sigma)=
 		\int_{-S}^{S}G(s, \sigma)f(l_{y}(s), \sigma)\,ds
 \end{equation}
-The same procedure with $\sigma_{s} = 1.6\sigma_{c}$ is then applied to the same input image, producing another blurred image.
-From these 2 output images, we then able to calculate differences of each pixel's intensity, and capture edges of the input image (Figure ~\ref{fig:DoG}).
+The same procedure using different $\sigma$ ($\sigma_{s} = 1.6\sigma_{c}$) is then applied to the same input image, producing the second blurred image.
+From these 2 output images, edges can then be identified by calculating differences of pixel intensity on these 2 images. Pixel with high intensity difference is much likely to be an edge (Figure ~\ref{fig:DoG}).
 
 \begin{equation}
 	H_{d}(\mbox{x}) = F(\mbox{x},\sigma_{c}) - \rho\cdot F(\mbox{x},\sigma_{s})
@@ -113,15 +112,14 @@ From these 2 output images, we then able to calculate differences of each pixel'
 \end{figure}
 
 \section{Flow-based Difference of Gaussian} 
-Difference-of-gaussian (DoG) method has the nature of isotropic because the filter moves to every direction in order to calculate the differences. This nature, when applied to images with anisotropic characteristic, will create a lot of discontinuity lines because it failed to follow the direction alongside the edges. So, instead of moving to every direction, Kang et al. are suggesting to incorporate direction guide to the filter that follows the direction of edges \cite{kang07}.
+Difference-of-gaussian (DoG) method has the nature of isotropic because the kernel moves to every direction in order to calculate intensity differences. This behavior, when applied to images with anisotropic characteristic, will create a lot of discontinuity lines around edge because it failed to follow the path of the edge. So, instead of moving to every direction, Kang et al. suggested to use direction guide to the filter that follows the direction of edges \cite{kang07}.
 
-To create the direction guidance for DoG filter, Kang et al., use the information from edge flow, which is where an area of image has high contrast of intensity level, and run the DoG filter perpendicular to the edge flow direction. By providing guide for the filter direction, Kang et al., were able to produced more coherent and continues line drawing \cite{kang07}. 
+To create the direction guidance for DoG filter, Kang et al., use the information from edge flow, which is the direction in which exist the biggest contrast, and run the DoG filter perpendicular to the edge flow direction \cite{kang07}. By providing guide for the filter direction, Kang et al., were able to produced more coherent and continues line drawing .
 
+\subsection{Edge Tangent Flow}
+Kang et al., technique in creating line drawing required two steps. First step is to generate edge tangent flow that will provide direction guide for DoG filter. To create edge tangent flow from input image $ I(\mbox{x}) $, where $ \mbox{x} = (x,y)$ denotes a pixel at coordinate $(x,y)$, Kang et al., use edge tangent $\mbox{t}(\mbox{x}) $ as a vector perpendicular to the image gradient $ g(\mbox{x}) = \nabla I(\mbox{x})$, and called it Edge Tangent Flow (ETF). 
 
-\subsection{Edge Tangent Flow} 
-Kang et al., technique in creating line drawing required two steps. First step is to generate edge tangent flow that will provide direction to run DoG filter. To create edge tangent flow from input image $ I(\mbox{x}) $, where $ \mbox{x} = (x,y)$ denotes a pixel at coordinate $(x,y)$, Kang et al., use edge tangent $\mbox{t}(\mbox{x}) $ as a vector perpendicular to the image gradient $ g(\mbox{x}) = \nabla I(\mbox{x})$, and called it Edge Tangent Flow (ETF). 
-
-They presented a technique to construct ETF by using kernel-based nonlinear smoothing of vector field. The ETF construction filter is as follows:
+They presented a technique to construct ETF by using kernel-based nonlinear vector smoothing of vector field. The ETF construction filter is as follows:
 \begin{equation}
 	\mbox{t} ^{new}(\mbox{x} ) = \frac{1}{k} \sum_{\mathrm{x}' \in \Omega (\mathrm{x})} \phi (\mbox{x},\mbox{x}') \mbox{t} ^{cur} (\mbox{y}) w_s(\mbox{x},\mbox{x}') w_m(\mbox{x},\mbox{x}') w_d(\mbox{x},\mbox{x}')
 \end{equation}
