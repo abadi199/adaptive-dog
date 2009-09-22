@@ -14,14 +14,14 @@ The goal of NPR is to try to achieve the same benefits of using hand-drawn image
 
 Since the first time NPR was introduced, there have been many researches to work on the topic. Many of them have created techniques of imitating different styles of hand-drawing period. For example: sketch rendering \cite{strothotte94}, pen-and-ink illustration \cite{winkenbach94},\cite{salisbury94}, stipple drawing \cite{secord02},\cite{deussen00}, painterly effect \cite{litwinowicz97},\cite{hertzmann98},\cite{hays04}, and line drawing \cite{decarlo03}, \cite{sousa03},\cite{kang07}.
 
-%\chapter{Background}
+\section{Background}
 
-\section{Line Drawing} 
+\subsection{Line Drawing} 
 Line drawing is a drawing style that is commonly used to create illustration, such as technical illustrations and medical illustrations, caricature drawings, sketch drawings, etc. Line drawing uses straight or curved lines to form an image. Some techniques, such as stippling or hatching, can be used to show different levels of shade. Line drawing has become one of the primary branches of NPR. Techniques have been improving in creating more believable results compared to line drawing illustration made by an artist. Line drawing in NPR can be divided into two categories based on the source of the image, which can be a 3D object or a 2D object. Many works have been introduced on line drawing based on 3D object \cite{decarlo03}, \cite{sousa03}. Creating line drawing images from 3D models is relatively easier compared to 2D objects. In 3D models, the edge can be easily identified because all the information is stored in a straightforward manner, while in 2D objects, such as in photographs, information about edges are more difficult to extract and require extra steps and complicated methods to achieve a good result.
 
 Most work in line drawing in NPR is based on edge detection or image segmentation techniques. The difference between edge detection and line drawing is that edge detection is more focused on how to extract edges from a picture without considering the aesthetic aspect of how the lines (edges) are compounded. While line drawing in NPR is also trying to extract edges from pictures and form lines, it attempts to create a more artistic result, as if the image were created by human artist. Some aspects that need to be considered to produce artistic results are: the structures of the lines and the use of stylistic edges. There are many methods to do edge detection, two examples of them are Canny's method \cite{canny86}, and Marr-Hildreth's method \cite{marr-hildreth80}, which became the base for Difference-of-Gaussian (DoG) filter and used by Gooch et al. in their facial illustration system to create some artistic line drawing.
 
-\section{Difference of Gaussian (DoG)} 
+\subsection{Difference of Gaussian (DoG)} 
 Gooch et al. in their facial illustration system \cite{gooch04} were able to create some artistic results. They were able generate a caricature of a human face based on a photograph. Their method uses DoG filter, which was based on Marr-Hildreth's edge detection.
 
 The basic idea of DoG is to apply 2 Gaussian filters with different blur levels ($\sigma$). The second Gaussian filter uses a bigger blur radius to create blurrier image compared to the image produced by the first Gaussian filter. The area close to edge will have more change than area far from edge when applied to Gaussian filter with different $\sigma$. The difference of intensity of each pixel of these two blurred images will be use by DoG to obtain edges, as shown in Figure ~\ref{fig:DoG_sample1}.
@@ -29,13 +29,13 @@ The basic idea of DoG is to apply 2 Gaussian filters with different blur levels 
 \begin{figure}[H]
 \centering
 	\subfigure[Input image] {
-		\includegraphics[width=1.8in]{pictures/beach_rock_boat/image.eps}
+		\includegraphics[width=1.8in]{pictures/beach_rock_boat/image}
 	}
 	\subfigure[Gaussian with $\sigma = 1.0$] {
-		\includegraphics[width=1.8in]{pictures/beach_rock_boat/gaussian1.eps}
+		\includegraphics[width=1.8in]{pictures/beach_rock_boat/gaussian1}
 	}
 	\subfigure[Gaussian with $\sigma = 1.6$] {
-		\includegraphics[width=1.8in]{pictures/beach_rock_boat/gaussian2.eps}
+		\includegraphics[width=1.8in]{pictures/beach_rock_boat/gaussian2}
 	}
 \caption{Sample of gaussian filter}
 \label{fig:DoG_sample1}
@@ -103,20 +103,20 @@ From these 2 output images, edges can then be identified by calculating differen
 \begin{figure}[H]
 	\centering
 	\subfigure[Rock and Boat]{
-	\includegraphics[width=2in]{pictures/beach_rock_boat/dog.eps}
+	\includegraphics[width=2in]{pictures/beach_rock_boat/dog}
 	}
 	\subfigure[Baboon]{
-	\includegraphics[width=2.5in]{pictures/baboon/dog.eps}
+	\includegraphics[width=2.5in]{pictures/baboon/dog}
 	}
 	\caption{Difference-of-Gaussian}\label{fig:DoG}
 \end{figure}
 
-\section{Flow-based Difference of Gaussian} 
+\subsection{Flow-based Difference of Gaussian} 
 Difference-of-gaussian (DoG) method has the nature of isotropic because the kernel moves to every direction in order to calculate intensity differences. This behavior, when applied to images with anisotropic characteristic, will create a lot of discontinuity lines around edge because it failed to follow the path of the edge. So, instead of moving to every direction, Kang et al. suggested to use direction guide to the filter that follows the direction of edges \cite{kang07}.
 
 To create the direction guidance for DoG filter, Kang et al., use the information from edge flow, which is the direction in which exist the biggest contrast, and run the DoG filter perpendicular to the edge flow direction \cite{kang07}. By providing guide for the filter direction, Kang et al., were able to produced more coherent and continues line drawing .
 
-\subsection{Edge Tangent Flow}
+\subsubsection{Edge Tangent Flow}
 Kang et al., technique in creating line drawing required two steps. First step is to generate edge tangent flow that will provide direction guide for DoG filter. To create edge tangent flow from input image $ I(\mbox{x}) $, where $ \mbox{x} = (x,y)$ denotes a pixel at coordinate $(x,y)$, Kang et al., use edge tangent $\mbox{t}(\mbox{x}) $ as a vector perpendicular to the image gradient $ g(\mbox{x}) = \nabla I(\mbox{x})$, and called it Edge Tangent Flow (ETF). 
 
 They presented a technique to construct ETF by using kernel-based nonlinear vector smoothing of vector field. The ETF construction filter is as follows:
@@ -124,7 +124,7 @@ They presented a technique to construct ETF by using kernel-based nonlinear vect
 	\mbox{t} ^{new}(\mbox{x} ) = \frac{1}{k} \sum_{\mathrm{x}' \in \Omega (\mathrm{x})} \phi (\mbox{x},\mbox{x}') \mbox{t} ^{cur} (\mbox{y}) w_s(\mbox{x},\mbox{x}') w_m(\mbox{x},\mbox{x}') w_d(\mbox{x},\mbox{x}')
 \end{equation}
 
-where $ k $ is the vector normalizing term and $\Omega(\mbox{x})$ is the neighbor of $\mbox{x}$. ETF function uses 3 weight function, the first one is $w_s$, a \textit{spatial weight function}, which uses radially-symmetrical box filter with radius of $r$, where $r$ is the radius of kernel $\Omega$. The \textit{spatial weight  function} $w_s$ is defined as following:
+where $ k $ is the vector normalizing term and $\Omega(\mbox{x})$ is the neighbor of $\mbox{x}$. ETF function uses 3 weight functions, the first one is $w_s$, a \textit{spatial weight function}, which uses radially-symmetrical box filter with radius of $r$, where $r$ is the radius of kernel $\Omega$. The \textit{spatial weight  function} $w_s$ is defined as following:
 
 \newcommand{\norm}[1]{\left\| #1 \right\|}
 \begin{equation}
@@ -141,15 +141,15 @@ The second weight function is $w_m$, a \textit{magnitude weight function}, which
 \begin{equation}
 	w_m(\mbox{x}, \mbox{x}') = \frac{1}{2} (1 + \textrm{tanh}[\eta \cdot (\hat{g}(\mbox{x}') - \hat{g}(\mbox{x}) )])
 \end{equation}
-where $\hat{g}(\mbox{x})$ and $\hat{g}(\mbox{x}')$ denotes normalized gradient magnitude at $\mbox{x}$ and $\mbox{x}'$ respectively. Variable $\eta$ is the weight variable that determine how the neighboring pixel $\mbox{x}'$ with gradient value higher than gradient value of $\mbox{x}$ will influence the edge tangent $\mbox{t}(\mbox{x})$. 
+where $\hat{g}(\mbox{x})$ and $\hat{g}(\mbox{x}')$ denote normalized gradient magnitude at $\mbox{x}$ and $\mbox{x}'$ respectively. Variable $\eta$ is the weight variable that determine how the neighboring pixel $\mbox{x}'$ with gradient value higher than gradient value of $\mbox{x}$ will influence the edge tangent $\mbox{t}(\mbox{x})$. 
 
 The third weight function is the direction weight function $w_d$, which is defined as following:
 \begin{equation}
 	w_d(\mbox{x}, \mbox{x}') = |\mbox{t}^{cur}(\mbox{x})\cdot \mbox{t}^{cur}(\mbox{x}')|
 \end{equation}
-where $\mbox{t}^{cur}(\mbox{x})$ and $\mbox{t}^{cur}(\mbox{x})$ denote the current normalized tangent vector at $\mbox{x}$ and $\mbox{x}'$ respectively. This function is using a dot product between tangent vectors at a particular location with its neighbors'. The cross product produce a high weight value for vectors that are closely aligned (where angle between two vectors ($\theta$) is close to $0^{\circ}$ or $180^{\circ}$) and produce a low weight value for vectors that are perpendicular to each other (where angle between two vector ($\theta$) is close to $90^{\circ}$).
+where $\mbox{t}^{cur}(\mbox{x})$ and $\mbox{t}^{cur}(\mbox{x})$ denote the current normalized tangent vector at $\mbox{x}$ and $\mbox{x}'$ respectively. This function is using a dot product between tangent vectors at a particular location and its neighbors. The cross product produce a high weight value for vectors that are closely aligned (where angle between two vectors ($\theta$) is close to $0^{\circ}$ or $180^{\circ}$) and produce a low weight value for vectors that are perpendicular to each other (where angle between two vector ($\theta$) is close to $90^{\circ}$).
 
-The last function is used to reverse the direction of $\mbox{t}^{cur}(\mbox{x}')$ before smoothing when angle between vectors ($\theta$) is bigger than $90^{\circ}$ (dot product between two vectors is < 0):
+The last function is used to reverse the direction of $\mbox{t}^{cur}(\mbox{x}')$ when angle between vectors ($\theta$) is bigger than $90^{\circ}$ (dot product between two vectors is < 0):
 \begin{equation}
 	\phi(\mbox{x}, \mbox{x}') = 
 	\left\{
@@ -160,10 +160,10 @@ The last function is used to reverse the direction of $\mbox{t}^{cur}(\mbox{x}')
 	\right.
 \end{equation}
 
-As shown in the function, $\mbox{t}^{new}(\mbox{x})$ is achieved from applying all functions to $t^{cur}(\mbox{x})$, and initially, $\mbox{t}^{\circ}(\mbox{x})$ is achieved from normalized vector perpendicular to gradient $g(\mbox{x})$ in gradient map of the input image $I$. ETF is constructed by iteratively apply $\mbox{t}(\mbox{x})$ function several times (in this experiment, we applied 2 or 3 times).
+As shown in the function, $\mbox{t}^{new}(\mbox{x})$ is achieved from applying all functions to $t^{cur}(\mbox{x})$, and initially, $\mbox{t}^{\circ}(\mbox{x})$ is achieved from normalized vector perpendicular to gradient $g(\mbox{x})$ in gradient map of the input image $I$. ETF is constructed by iteratively apply $\mbox{t}(\mbox{x})$ function several times (in their experiment, Kang et al. applied the function 2 or 3 times).
 
 
-\subsection{Flow-based DoG}
+\subsubsection{Flow-based DoG}
 %\begin{equation}
 %	G_{\sigma}(x) = \frac{1}{\sqrt{2\pi\sigma}}e^{-\frac{x^2}{2\sigma^2}}
 %\end{equation}
@@ -171,7 +171,7 @@ After constructing ETF, the next step will be applying anisotropic DoG with edge
 \begin{figure}[H]
 	\centering
 	\subfigure[FDoG Kernel] {
-		\includegraphics[width=1.5in]{pictures/fdog_kernel.eps}
+		\includegraphics[width=1.5in]{pictures/fdog_kernel}
 	}
 	\subfigure[Gaussian components for DoG] {
 		\psset{unit=1.5}
@@ -191,83 +191,83 @@ After constructing ETF, the next step will be applying anisotropic DoG with edge
 	\caption{Flow-based DoG Kernel}\label{fig:FDoG_kernel}
 \end{figure}
 
-We first apply 1 dimensional filter $f(t)$ along the line $l_{s}$:
+First step is to apply 1 dimensional filter $f(t)$ along the line $l_{s}$:
 \begin{equation}
 	F(s) = \int_{-T}^{T} I(l_s(t))f(t)\,dt
 \end{equation}
-where $l_s(t)$ denotes a pixel on the line $l_s$ at parameter $t$, and $I(l_s(t))$ is intensity level of the pixel. Function $f(t)$ is the same DoG function from previous chapter that use 2 gaussian filters with difference $\sigma$ and then calculate differences from 2 output values. 
+where $l_s(t)$ denotes a pixel on the line $l_s$ at parameter $t$, and $I(l_s(t))$ is intensity level of the pixel. Function $f(t)$ is the same DoG function from previous chapter that uses 2 gaussian filters with different $\sigma$ and then calculate the differences of 2 output values. 
 \begin{equation}
 	f(t) = G_{\sigma_{c}}(t)-\rho \cdot G_{\sigma_{s}}(t)
 \end{equation}
-$\rho$ value control the level of noise detected, and in this experiment, we use value of 0.99.
+$\rho$ value controls the level of noise detected, and in their experiment, Kang et al. use value of 0.99.
 
-After applying filter $f(t)$ to each pixel, we then apply filter $F(t)$ along line $c_{x}$ from $-S$ to $S$ on FDoG kernel. 
+After applying filter $f(t)$ to each pixel, filter $F(t)$ is applied along the line $c_{x}$ from $-S$ to $S$. 
 \begin{equation}
 	H_{f}(\mbox{x}) = \int_{-S}^{S} G_{\sigma_{m}}(s)F(s)\,ds
 \end{equation}
-where $G_{\sigma_{m}}$ is another gaussian function that will become weight factor for each responses according to $s$. As shown in Figure ~\ref{fig:FDoG}, image from FDoG () has continuous lines and less noise compared to DoG.
+where $G_{\sigma_{m}}$ is another gaussian function that will become weight factor for each response according to $s$. As shown in Figure ~\ref{fig:FDoG}, image from FDoG has continuous lines and less noise compared to DoG.
 
 \begin{figure}[H]
 	\centering
 	\subfigure[Input image]{
-	\includegraphics[width=2in]{pictures/window/image.eps}
+	\includegraphics[width=2in]{pictures/window/image}
 	}
 	\subfigure[DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
 		\label{fig:DoG_sample}
-		\fbox{\includegraphics[width=2in]{pictures/window/dog.eps}}
+		\fbox{\includegraphics[width=2in]{pictures/window/dog}}
 	}
 	\subfigure[FDoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
 		\label{fig:FDoG_sample}
-		\fbox{\includegraphics[width=2in]{pictures/window/cld.eps}}
+		\fbox{\includegraphics[width=2in]{pictures/window/cld}}
 	}
 	\caption{Difference-of-Gaussian}\label{fig:FDoG}	
 \end{figure}
 
 
-\chapter{Hybrid}
-Base on the output, images created by FDoG contained more coherent and continuous lines compared to images created by DoG. The directional kernel used in FDoG was proven to be able to create lines on anisotropic images, and created good line drawing images. One major drawback of FDoG is it cannot capture all the detail on images with isotropic characteristic. Example on Figure ~\ref{fig:FDoGWeakness} shows that FDoG failed to capture the details of grained textures, furthermore creating lines in area where it is not supposed to be. While DoG can easily cope with this flaw, it still cannot outmatch FDoG in cases of anisotropic images. These two different characteristics of FDoG and DoG on handling isotropic and anisotropic images bring us to the idea of combining to method in order to achieve optimal results in both cases.
+\section{Hybrid}
+Based on the output, image created by FDoG contains more coherent and continuous lines compare to image created using DoG. The directional kernel used in FDoG was proven to be able to create lines on anisotropic image, and created good line drawing image. One major drawback of FDoG is it cannot capture all the detail on image with isotropic characteristic. Example on Figure ~\ref{fig:FDoGWeakness} shows that FDoG failed to capture the details of grained textures, furthermore creating lines in unexpected area. While DoG can easily overcome this problem, it still cannot outmatch FDoG in cases with anisotropic images. These two different characteristics of FDoG and DoG on handling isotropic and anisotropic images bring us to the idea of combining two method in order to achieve optimal result in both cases.
 
 \begin{figure}[H]
 	\centering
 	\subfigure[Input Image] {
-		\includegraphics[width=1.5in]{pictures/texture/image.eps}
+		\includegraphics[width=1.5in]{pictures/texture/image}
 	}
 	\subfigure[DoG] {
-		\includegraphics[width=1.5in]{pictures/texture/dog.eps}
+		\includegraphics[width=1.5in]{pictures/texture/dog}
 	}
 	\subfigure[FDoG] {
-		\includegraphics[width=1.5in]{pictures/texture/cld.eps}
+		\includegraphics[width=1.5in]{pictures/texture/cld}
 	}
 	\caption{Weakness of FDoG}\label{fig:FDoGWeakness}
 \end{figure}
 
-\section{Combining FDoG with DoG}
-The simple method to combine DoG and FDoG is by applying linear combination of FDoG and DoG functions, and called it Hybrid DoG:
+\subsection{Combining FDoG with DoG}
+A simple method to combine DoG and FDoG is by applying linear combination of FDoG and DoG functions, and we named it Hybrid DoG:
 \begin{equation}
 	H_{h}(\mbox{x}) = \lambda H_{f}(\mbox{x}) + (1 - \lambda) H_{d}(\mbox{x})
 \end{equation}
-Value of $\Lambda$ will determine the closeness of the output to FDoG or DoG, when the value of $\Lambda$ approaches 0, it will produce output that similar to DoG, and will produce output similar to FDoG when it approaches 1. 
+with $\lambda$ value ranges between 0 to 1. Value of $\lambda$ will determine the closeness of the output to FDoG or DoG. When the value of $\lambda$ approaches 0, it will produce output that similar to DoG, and will produce output similar to FDoG when it approaches 1. 
 
 With this variable $\lambda$, we can control the behavior of the filter according to the character of input images. Use value of $\lambda$ close to 0 for input images with majority of isotropic images, and use value of $\lambda$ close to 1 for anisotropic images. For images with both isotropic and anisotropic characteristic, based on our experiment, values of 0.5 for $\lambda$ will produce good results for most of the images.
 
-\chapter{Adaptive-DoG Technique}
-Another method to combine DoG and FDoG is to adaptively apply the right filter for different area depending on their characteristic. Area with isotropic textures will use DoG to retain the texture, while area with anisotropic detail will use FDoG to create more coherent lines and low noise details. To be able to adaptively apply the right filter, we first need to be able to distinguish between isotropic and anisotropic segment. Belongie et al., \cite{belongie98} in their paper use polarity to segment the image based on texture type. We simplify the technique used by Belongie et al.
+\section{Adaptive-DoG Technique}
+Another method to combine DoG and FDoG is to adaptively apply the right filter for different area depending on their characteristic. Area with isotropic textures will use DoG to retain the texture, while area with anisotropic detail will use FDoG to create more coherent lines and low noise details. To be able to adaptively apply the right filter, we first need to distinguish between isotropic and anisotropic segment in an image. Belongie et al., \cite{belongie98} in their paper use polarity to segment the image based on texture type. We simplify the technique used by Belongie et al.
 
-\section{Image Segmentation} 
-Polarity is calculated by comparing the gradient's direction of a pixel to its neighbor's gradients. Area with similar gradient vector direction considered as high polarity area, while area with non-uniform gradient vector direction is considered as low polarity area. Non-uniform gradient vector direction is can be found in isotropic area the gradients in this area scattered. Anisotropic area will have more uniform and similar direction, although it may also has have gradients facing opposite to each other as we can see on area with stripe texture. Using this behavior, we can distinguish between isotropic and anisotropic area by determining polarity of each pixel. One exception that need to be considered is isotropic area with low gradient magnitude should be considered as isotropic segment since this area should be applied with FDoG filter to minimize noise.
+\subsection{Image Segmentation} 
+Polarity is calculated by comparing the gradient direction of a pixel to its neighbor's gradients direction. Area with similar gradient vector direction is considered as high polarity area, while area with non-uniform gradient vector direction is considered as low polarity area. Non-uniform gradient vector direction can be found in isotropic area where the gradients in this area are scattered. Anisotropic area will have more uniform and similar direction, although it may also has have gradients facing opposite to each other as we can see on area with stripe pattern. Using this behavior, we can distinguish between isotropic and anisotropic area by determining the polarity of each pixel. One exception that need to be considered is isotropic area with low gradient magnitude should be considered as isotropic segment since this area should be applied with FDoG filter to minimize noise.
 
-To calculate polarity, we use a function $S$ which will be applied to pixel location $\mbox{x}$:
+To calculate polarity, we use a function $S$ which will be applied to pixel $\mbox{x}$:
 \begin{equation}
 	S(\mbox{x})=\frac{\sum\limits_{\mathrm{x}' \in \Omega (\mathrm{x})}\left|\,g(\mbox{x}) \cdot g(\mbox{x})'\,|\right.}
 		{\left|\,\Omega(\mathrm{x})\,|\right.}
 \end{equation}
 where $\Omega(\mbox{x})$ is the neighborhood of pixel $\mbox{x}$ and pixel $\mbox{x}'$ is element of $\Omega(\mbox{c})$. We use absolute value for dot product between two gradient vector because we consider vectors with opposite direction in the same segment. The sum of dot product is then divided by ${\left|\,\Omega(\mathrm{x})\,|\right.}$, the total number of pixels in the neighborhood, to get the average.
 
-Next step will be segmenting the image using the polarity measured on previous step:
+Next step will be segmenting the image using the polarity from previous step:
 %binarize
 \begin{equation}
 	P(\mbox{x})=
@@ -279,23 +279,23 @@ Next step will be segmenting the image using the polarity measured on previous s
 			\end{array}
 		\right.
 \end{equation}
-We use a threshold $\alpha$ as a cut point for polarity level, and in our experiment, we use $\alpha = 0.875$. Area with polarity above the threshold will be considered as anisotropic segment (labeled with $1$). For isotropic segment (labeled with $0$), since we also consider isotropic area with low gradient magnitude as anisotropic segment, we also need to consider the gradient magnitude. Variable $\beta$ is threshold for gradient magnitude at pixel $\mbox{x}$ and we use $\beta = 0.1$ in our experiment. 
+We use a threshold $\alpha$ as a cut point of polarity level, and in our experiment, we use $\alpha = 0.875$. Area with polarity over the threshold will be considered as anisotropic segment (labeled with $1$). For isotropic segment (labeled with $0$), we consider isotropic area with low gradient magnitude as anisotropic segment (labeled with $1$). Variable $\beta$ is the threshold for gradient magnitude at pixel $\mbox{x}$ and we use $\beta = 0.1$ in this experiment. 
 \begin{figure}[H]
 	\centering
 	\subfigure[Input image]{
 		\label{fig:Polarity_input}
-		\includegraphics[width=2.5in]{pictures/coffeebeans/image.eps}
+		\includegraphics[width=2.5in]{pictures/coffeebeans/image}
 	}
-	\subfigure[Polarity-based image segment; white indicates isotropic area, black indicates anisotropic area, and gray indicates area with low gradient magnitude]{
+	\subfigure[Polarity-based image segment; white indicates isotropic area (label 0), black indicates anisotropic area (label 1), and gray indicates area with low gradient magnitude (label 1)]{
 		\label{fig:Polarity_sample1}
-		\includegraphics[width=2.5in]{pictures/coffeebeans/polarity.eps}
+		\includegraphics[width=2.5in]{pictures/coffeebeans/polarity}
 	}
 	\caption{Image Segmentation}
 \end{figure}
 
-\section{Adaptive-DoG}
+\subsection{Adaptive-DoG}
 
-Once we obtain the image segment, the next step to adaptively apply hybrid DoG will be straightforward. Provided the characteristic of each area, we are now able to determine the proper filter for different area just by using label from the image segment. 
+Once we obtain the image segment, the next step to adaptively apply hybrid DoG will be straightforward. Provided the characteristic of each area, we are now able to determine the proper filter for different area by using labels from image segmentation step. 
 \begin{equation}
 	H_{a}(\mbox{x})=
 		\left\{
@@ -306,22 +306,22 @@ Once we obtain the image segment, the next step to adaptively apply hybrid DoG w
 			\end{array}
 		\right.
 \end{equation}
-Segment labeled with $0$ is isotropic area and use DoG filter $H_{d}$, while anisotropic area labeled with $1$ is applied with FDoG filter $H_{f}$. 
+Image segment labeled with $0$ (isotropic segment) will be applied with DoG filter $H_{d}$, while image segment labeled with $1$ (anisotropic segment) will be applied with FDoG filter $H_{f}$. 
 
-\chapter{Results}
-The results of this adaptive technique have coherent lines similar to lines in FDoG, while still maintaining the details in coarser area. The lines as shown in figure ~\ref{fig:Adaptive_sample} around the shoe area have similar shape with lines from FDoG, while the surrounding textures still maintain its original shape.
+\section{Results}
+The result of this adaptive technique has coherent lines similar to lines in FDoG, while still maintains the details in coarser area. The lines as shown in figure ~\ref{fig:Adaptive_sample} around the shoe area have similar shape with lines from FDoG, while the surrounding textures still maintain its original shape.
 
 \begin{figure}[H]
 	\centering
 	\subfigure[Input Image]{
 		\label{fig:Adaptive_input}
-		\includegraphics[width=2.5in]{pictures/shoes/image.eps}
+		\includegraphics[width=2.5in]{pictures/shoes/image}
 	}
 	\subfigure[Adaptive-DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
 		\label{fig:Adaptive_sample}
-		\fbox{\includegraphics[width=2.5in]{pictures/shoes/adaptive.eps}}
+		\fbox{\includegraphics[width=2.5in]{pictures/shoes/adaptive}}
 	}
 	\caption{Adaptive-DoG}\label{fig:Adaptive_DoG}
 \end{figure}
@@ -332,17 +332,17 @@ The results of this adaptive technique have coherent lines similar to lines in F
 	\subfigure[Input Image]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/beach_rock_boat/image.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/beach_rock_boat/image}}
 	}	
 	\subfigure[Polarity Segment]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/beach_rock_boat/polarity.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/beach_rock_boat/polarity}}
 	}
 	\subfigure[Adaptive-DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/beach_rock_boat/adaptive.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/beach_rock_boat/adaptive}}
 	}
 	\caption{Boat and Rock}\label{fig:Compare1}
 \end{figure}
@@ -352,22 +352,22 @@ The results of this adaptive technique have coherent lines similar to lines in F
 	\subfigure[Input Image]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/image.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/image}}
 	}	
 	\subfigure[DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/dog.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/dog}}
 	}
 	\subfigure[FDoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/cld.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/cld}}
 	}
 	\subfigure[Adaptive-DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/adaptive.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sand/adaptive}}
 	}
 	\caption{A Boat in Beach}\label{fig:Compare2}
 \end{figure}
@@ -377,22 +377,22 @@ The results of this adaptive technique have coherent lines similar to lines in F
 	\subfigure[Input Image]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}		
-		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/image.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/image}}
 	}	
 	\subfigure[DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/dog.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/dog}}
 	}
 	\subfigure[FDoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/cld.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/cld}}
 	}
 	\subfigure[Adaptive-DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/adaptive.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/sand_dollar/adaptive}}
 	}
 	\caption{Sand Dollar}\label{fig:Compare3}
 \end{figure}
@@ -402,48 +402,48 @@ The results of this adaptive technique have coherent lines similar to lines in F
 	\subfigure[Input Image]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/image.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/image}}
 	}	
 	\subfigure[DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/dog.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/dog}}
 	}
 	\subfigure[FDoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/cld.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/cld}}
 	}
 	\subfigure[Adaptive-DoG]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/adaptive.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/adaptive}}
 	}
 	\subfigure[Adaptive-DoG Thin]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/adaptivethin.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/adaptivethin}}
 	}
 	\subfigure[Canny's Edge Detection]{
 		\setlength\fboxsep{0pt}
 		\setlength\fboxrule{0.5pt}
-		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/canny.eps}}
+		\fbox{\includegraphics[width=2.4in]{pictures/boat_in_sf/canny}}
 	}
 	\caption{Boats at the Bay}\label{fig:Compare4}
 \end{figure}
-The current implementation of our Adaptive-DoG filter is not optimized for performance yet. Currently, it runs significantly slower than DoG and FDoG, due to the image segmentation step. Our implementation of polarity calculation requires $1344 ms$ to perfoms on image with $750*500$ dimension with size of neigborhood at $20*20$ pixels. The Adaptive-DoG filter itself runs for $3390 ms$ on the same image. The total run time for this technique is $7797 ms$. This number is significantly higher DoG, which only requires $3859 ms$, and also FDoG, which only requires $4578 ms$. The main problem from our implementation is that we still apply both DoG and FDoG filters, in which both output will be selectively chosen based on image segment. Further improvement of this implementation is required to make the program run faster and more efficient.
+The current implementation of our Adaptive-DoG filter is not optimized for performance yet. Currently, it runs significantly slower than DoG and FDoG, due to the image segmentation step. Our implementation of polarity calculation requires $1344 ms$ to perfoms on image with $750*500$ dimension with size of neigborhood at $20*20$ pixels. The Adazptive-DoG filter itself runs for $3390 ms$ on the same image. The total run time for this technique is $7797 ms$. This number is significantly higher than DoG, which only requires $3859 ms$, and also FDoG, which only requires $4578 ms$. The main problem from our implementation is that we still apply both DoG and FDoG filters, in which both output will be selectively chosen based on image segment. Further improvement of this implementation is required to make the program run faster and more efficient.
 
-\chapter{Conclusion}
-Our Adaptive-DoG technique, regardless the performance in term of speed, is able to produce better results when compared to DoG and FDoG in many different variaty of images in our experiment. The lines appear to be more continuous than lines in DoG images, and the details in coarse texture is better maintain than FDoG images.
+\section{Conclusion}
+Our Adaptive-DoG technique, regardless the performance in term of speed, is able to produce better results when compared to DoG and FDoG in many different variaty of images in our experiment. The lines appear to be more continuous than lines in DoG images, and the details of coarse texture is better preserved than in FDoG images.
 
 Although the output is relatively better in some cases, the results of Adaptive-DoG may never exceed the results of neither DoG nor FDoG in some specific cases. For input image that only contains lines without any coarse texture, the results of Adaptive-DoG will, at best, be the same with FDoG, while for input image with coarse texture only, the results will never exceed DoG.
 
 Another note from experiment experiment that we need mention is the performance in term of runtime. Our experiment shows that the performance of the filter is relatively lower than both preceding filters. Nevertheles, with more code optimization and tweaking, some improvements are possible to be achieved.
 
-Possible future improvement for Adaptive-DoG is by iterating the filters to prouduce more solid shape for both lines and textures. The same polarity map may be use on the next iteration, but generating new polarity map might also produce better results.
+Possible future improvement for Adaptive-DoG is by iterating the filters to produce more solid shape for both lines and textures. The same polarity map may be use on the next iteration, but generating new polarity map might also produce better results.
 
-%\chapter{Future Implementation}
+%\section{Future Implementation}
 %\section{Speed-up of Image Segmentation}
 
 \bibliography{main} 
-\bibliographystyle{plain} 
+\bibliographystyle{plainnat}
