@@ -4,11 +4,11 @@
 \contentsline {section}{\numberline {2.2}Difference of Gaussian (DoG)}{8}
 \contentsline {section}{\numberline {2.3}Flow-based Difference of Gaussian}{10}
 \contentsline {subsection}{\numberline {2.3.1}Edge Tangent Flow}{10}
-\contentsline {subsection}{\numberline {2.3.2}Flow-based DoG}{11}
-\contentsline {chapter}{\numberline {3}Hybrid}{14}
-\contentsline {section}{\numberline {3.1}Combining FDoG with DoG}{14}
-\contentsline {chapter}{\numberline {4}Adaptive-DoG Technique}{16}
-\contentsline {section}{\numberline {4.1}Image Segmentation}{16}
-\contentsline {section}{\numberline {4.2}Adaptive-DoG}{17}
-\contentsline {chapter}{\numberline {5}Results}{18}
-\contentsline {chapter}{\numberline {6}Conclusion}{24}
+\contentsline {subsection}{\numberline {2.3.2}Flow-based DoG}{12}
+\contentsline {chapter}{\numberline {3}Hybrid}{15}
+\contentsline {section}{\numberline {3.1}Combining FDoG with DoG}{16}
+\contentsline {chapter}{\numberline {4}Adaptive-DoG Technique}{17}
+\contentsline {section}{\numberline {4.1}Image Segmentation}{17}
+\contentsline {section}{\numberline {4.2}Adaptive-DoG}{19}
+\contentsline {chapter}{\numberline {5}Results}{20}
+\contentsline {chapter}{\numberline {6}Conclusion}{26}

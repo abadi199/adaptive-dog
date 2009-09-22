@@ -1,102 +1,142 @@
-\begin{thebibliography}{10}
+\begin{thebibliography}{18}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem{belongie98}
+\bibitem[Belongie et~al.(1998)Belongie, Carson, Greenspan, and
+  Malik]{belongie98}
 S.~Belongie, C.~Carson, H.~Greenspan, and J.~Malik.
 \newblock Color- and texture-based image segmentation using em and its
   application to content-based image retrieval.
-\newblock {\em Computer Vision, 1998. Sixth International Conference on}, pages
-  675--682, Jan 1998.
+\newblock \emph{Computer Vision, 1998. Sixth International Conference on},
+  pages 675--682, Jan 1998.
+\newblock \doi{10.1109/ICCV.1998.710790}.
 
-\bibitem{canny86}
+\bibitem[Canny(1986)]{canny86}
 John Canny.
 \newblock A computational approach to edge detection.
-\newblock {\em Pattern Analysis and Machine Intelligence, IEEE Transactions
-  on}, PAMI-8(6):679--698, Nov. 1986.
+\newblock \emph{Pattern Analysis and Machine Intelligence, IEEE Transactions
+  on}, PAMI-8\penalty0 (6):\penalty0 679--698, Nov. 1986.
+\newblock ISSN 0162-8828.
+\newblock \doi{10.1109/TPAMI.1986.4767851}.
 
-\bibitem{decarlo03}
+\bibitem[DeCarlo et~al.(2003)DeCarlo, Finkelstein, Rusinkiewicz, and
+  Santella]{decarlo03}
 Doug DeCarlo, Adam Finkelstein, Szymon Rusinkiewicz, and Anthony Santella.
 \newblock Suggestive contours for conveying shape.
-\newblock {\em ACM Trans. Graph.}, 22(3):848--855, 2003.
+\newblock \emph{ACM Trans. Graph.}, 22\penalty0 (3):\penalty0 848--855, 2003.
+\newblock ISSN 0730-0301.
+\newblock \doi{http://doi.acm.org/10.1145/882262.882354}.
 
-\bibitem{deussen00}
+\bibitem[Deussen et~al.(2000)Deussen, Hiller, Overveld, and
+  Strothotte]{deussen00}
 Oliver Deussen, Stefan Hiller, Cornelius~Van Overveld, and Thomas Strothotte.
 \newblock Floating points: A method for computing stipple drawings.
-\newblock {\em Computer Graphics Forum}, 19:40--51, 2000.
+\newblock \emph{Computer Graphics Forum}, 19:\penalty0 40--51, 2000.
 
-\bibitem{gooch04}
+\bibitem[Gooch et~al.(2004)Gooch, Reinhard, and Gooch]{gooch04}
 Bruce Gooch, Erik Reinhard, and Amy Gooch.
 \newblock Human facial illustrations: Creation and psychophysical evaluation.
-\newblock {\em ACM Trans. Graph.}, 23(1):27--44, 2004.
+\newblock \emph{ACM Trans. Graph.}, 23\penalty0 (1):\penalty0 27--44, 2004.
+\newblock ISSN 0730-0301.
+\newblock \doi{http://doi.acm.org/10.1145/966131.966133}.
 
-\bibitem{hays04}
+\bibitem[Hays and Essa(2004)]{hays04}
 James Hays and Irfan Essa.
 \newblock Image and video based painterly animation.
-\newblock pages 113--120, 2004.
+\newblock \emph{NPAR '04: Proceedings of the 3rd international symposium on
+  Non-photorealistic animation and rendering}, pages 113--120, 2004.
+\newblock \doi{http://doi.acm.org/10.1145/987657.987676}.
 
-\bibitem{hertzmann98}
+\bibitem[Hertzmann(1998)]{hertzmann98}
 Aaron Hertzmann.
 \newblock Painterly rendering with curved brush strokes of multiple sizes.
-\newblock In {\em SIGGRAPH '98: Proceedings of the 25th annual conference on
+\newblock In \emph{SIGGRAPH '98: Proceedings of the 25th annual conference on
   Computer graphics and interactive techniques}, pages 453--460, New York, NY,
   USA, 1998. ACM.
+\newblock ISBN 0-89791-999-8.
+\newblock \doi{http://doi.acm.org/10.1145/280814.280951}.
 
-\bibitem{kang07}
+\bibitem[Kang et~al.(2007)Kang, Lee, and Chui]{kang07}
 Henry Kang, Seungyong Lee, and Charles~K. Chui.
 \newblock Coherent line drawing.
-\newblock {\em NPAR '07: Proceedings of the 5th international symposium on
+\newblock \emph{NPAR '07: Proceedings of the 5th international symposium on
   Non-photorealistic animation and rendering}, pages 43--50, 2007.
+\newblock \doi{http://doi.acm.org/10.1145/1274871.1274878}.
 
-\bibitem{litwinowicz97}
+\bibitem[Litwinowicz(1997)]{litwinowicz97}
 Peter Litwinowicz.
 \newblock Processing images and video for an impressionist effect.
-\newblock pages 407--414, 1997.
+\newblock \emph{SIGGRAPH '97: Proceedings of the 24th annual conference on
+  Computer graphics and interactive techniques}, pages 407--414, 1997.
+\newblock \doi{http://doi.acm.org/10.1145/258734.258893}.
 
-\bibitem{marr-hildreth80}
+\bibitem[Marr and Hildreth(1980)]{marr-hildreth80}
 D.~Marr and E.~Hildreth.
 \newblock Theory of edge detection.
-\newblock {\em Proceedings of the Royal Society of London. Series B, Biological
-  Sciences,}, 207(1167):187--217, February 1980.
+\newblock \emph{Proceedings of the Royal Society of London. Series B,
+  Biological Sciences,}, 207\penalty0 (1167):\penalty0 187--217, February 1980.
 
-\bibitem{emily08}
+\bibitem[Metrics and for Creative Technologies Graphics~Lab(2008)]{emily08}
 Image Metrics and USC~Institute for Creative Technologies Graphics~Lab.
 \newblock High resolution face scanning for "digital emily".
-\newblock \url{http://http://gl.ict.usc.edu/Research/DigitalEmily/}, 2008.
+\newblock \url{http://gl.ict.usc.edu/Research/DigitalEmily/}, 2008.
 
-\bibitem{salisbury94}
+\bibitem[Salisbury et~al.(1994)Salisbury, Anderson, Barzel, and
+  Salesin]{salisbury94}
 Michael~P. Salisbury, Sean~E. Anderson, Ronen Barzel, and David~H. Salesin.
 \newblock Interactive pen-and-ink illustration.
-\newblock pages 101--108, 1994.
+\newblock \emph{SIGGRAPH '94: Proceedings of the 21st annual conference on
+  Computer graphics and interactive techniques}, pages 101--108, 1994.
+\newblock \doi{http://doi.acm.org/10.1145/192161.192185}.
 
-\bibitem{schumann96}
+\bibitem[Schumann et~al.(1996)Schumann, Strothotte, Laser, and
+  Raab]{schumann96}
 Jutta Schumann, Thomas Strothotte, Stefan Laser, and Andreas Raab.
 \newblock Assessing the effect of non-photorealistic rendered images in cad.
-\newblock pages 35--41, 1996.
+\newblock \emph{CHI '96: Proceedings of the SIGCHI conference on Human factors
+  in computing systems}, pages 35--41, 1996.
+\newblock \doi{http://doi.acm.org/10.1145/238386.238398}.
 
-\bibitem{secord02}
+\bibitem[Secord(2002)]{secord02}
 Adrian Secord.
 \newblock Weighted voronoi stippling.
-\newblock pages 37--43, 2002.
+\newblock \emph{NPAR '02: Proceedings of the 2nd international symposium on
+  Non-photorealistic animation and rendering}, pages 37--43, 2002.
+\newblock \doi{http://doi.acm.org/10.1145/508530.508537}.
 
-\bibitem{sousa03}
+\bibitem[Sousa and Prusinkiewicz(2003)]{sousa03}
 Mario~Costa Sousa and Przemyslaw Prusinkiewicz.
 \newblock A few good lines: Suggestive drawing of 3d models.
-\newblock {\em Computer Graphics Forum}, 22(3):381--390, September 2003.
+\newblock \emph{Computer Graphics Forum}, 22\penalty0 (3):\penalty0 381--390,
+  September 2003.
+\newblock \doi{10.1111/1467-8659.00685}.
 
-\bibitem{strothotte94}
+\bibitem[Strothotte et~al.(1994)Strothotte, Preim, Raab, Schumann, and
+  Forsey]{strothotte94}
 T.~Strothotte, B.~Preim, A.~Raab, J.~Schumann, and D.~R. Forsey.
 \newblock How to render frames and influence people.
-\newblock 13(3):455--466, 1994.
+\newblock \emph{Computer Graphics Forum}, 13\penalty0 (3):\penalty0 455--466,
+  1994.
 \newblock Special issue on Eurographics~'94.
 
-\bibitem{strothotte02}
+\bibitem[Strothotte and Schlechtweg(2002)]{strothotte02}
 Thomas Strothotte and Stefan Schlechtweg.
-\newblock {\em Non-Photorealistic Computer Graphics: Modeling, Rendering and
+\newblock \emph{Non-Photorealistic Computer Graphics: Modeling, Rendering and
   Animation}.
 \newblock Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, June 2002.
+\newblock ISBN 1558607870.
+\newblock URL
+  \url{http://www.amazon.ca/exec/obidos/redirect?tag=citeulike09-20\&amp;path=%
+ASIN/1558607870}.
 
-\bibitem{winkenbach94}
+\bibitem[Winkenbach and Salesin(1994)]{winkenbach94}
 Georges Winkenbach and David~H. Salesin.
 \newblock Computer-generated pen-and-ink illustration.
-\newblock pages 91--100, 1994.
+\newblock \emph{SIGGRAPH '94: Proceedings of the 21st annual conference on
+  Computer graphics and interactive techniques}, pages 91--100, 1994.
+\newblock \doi{http://doi.acm.org/10.1145/192161.192184}.
 
 \end{thebibliography}

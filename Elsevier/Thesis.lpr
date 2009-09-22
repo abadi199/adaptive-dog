@@ -11,14 +11,14 @@ Bookmark#7=0
 Bookmark#8=0
 Bookmark#9=0
 CaretPos.X=0
-CaretPos.Y=296
+CaretPos.Y=0
 CharSet=def
 FileName=thesis.tex
 FoldedLines=
 IsMainFile=no
 Opened=yes
 ScrollPos.X=0
-ScrollPos.Y=474
+ScrollPos.Y=1
 SearchListCount=0
 ShowSyntax=yes
 SpellChecking=yes
@@ -27,34 +27,6 @@ UseThesaurus=yes
 WrapLine=yes
 
 [Files\10]
-ActiveFilters=
-Bookmark#0=0
-Bookmark#1=0
-Bookmark#2=0
-Bookmark#3=0
-Bookmark#4=0
-Bookmark#5=0
-Bookmark#6=0
-Bookmark#7=0
-Bookmark#8=0
-Bookmark#9=0
-CaretPos.X=0
-CaretPos.Y=0
-CharSet=def
-FileName=main.toc
-FoldedLines=
-IsMainFile=no
-Opened=no
-ScrollPos.X=0
-ScrollPos.Y=0
-SearchListCount=0
-ShowSyntax=yes
-SpellChecking=yes
-TabOrder=-1
-UseThesaurus=yes
-WrapLine=yes
-
-[Files\11]
 ActiveFilters=
 Bookmark#0=0
 Bookmark#1=0
@@ -82,7 +54,7 @@ TabOrder=-1
 UseThesaurus=yes
 WrapLine=yes
 
-[Files\12]
+[Files\11]
 ActiveFilters=
 Bookmark#0=0
 Bookmark#1=0
@@ -110,7 +82,7 @@ TabOrder=-1
 UseThesaurus=yes
 WrapLine=yes
 
-[Files\13]
+[Files\12]
 ActiveFilters=
 Bookmark#0=0
 Bookmark#1=0
@@ -138,7 +110,7 @@ TabOrder=-1
 UseThesaurus=yes
 WrapLine=yes
 
-[Files\14]
+[Files\13]
 ActiveFilters=
 Bookmark#0=0
 Bookmark#1=0
@@ -154,6 +126,34 @@ CaretPos.X=0
 CaretPos.Y=0
 CharSet=def
 FileName=thesis.aux
+FoldedLines=
+IsMainFile=no
+Opened=no
+ScrollPos.X=0
+ScrollPos.Y=0
+SearchListCount=0
+ShowSyntax=yes
+SpellChecking=yes
+TabOrder=-1
+UseThesaurus=yes
+WrapLine=yes
+
+[Files\14]
+ActiveFilters=
+Bookmark#0=0
+Bookmark#1=0
+Bookmark#2=0
+Bookmark#3=0
+Bookmark#4=0
+Bookmark#5=0
+Bookmark#6=0
+Bookmark#7=0
+Bookmark#8=0
+Bookmark#9=0
+CaretPos.X=17
+CaretPos.Y=7
+CharSet=def
+FileName=main.bib
 FoldedLines=
 IsMainFile=no
 Opened=no
@@ -349,7 +349,7 @@ Bookmark#9=0
 CaretPos.X=0
 CaretPos.Y=0
 CharSet=def
-FileName=main.bbl
+FileName=main.lof
 FoldedLines=
 IsMainFile=no
 Opened=no
@@ -374,12 +374,12 @@ Bookmark#6=0
 Bookmark#7=0
 Bookmark#8=0
 Bookmark#9=0
-CaretPos.X=0
-CaretPos.Y=0
+CaretPos.X=10
+CaretPos.Y=2
 CharSet=def
-FileName=main.lof
+FileName=main.tex
 FoldedLines=
-IsMainFile=no
+IsMainFile=yes
 Opened=no
 ScrollPos.X=0
 ScrollPos.Y=0
@@ -405,9 +405,9 @@ Bookmark#9=0
 CaretPos.X=0
 CaretPos.Y=0
 CharSet=def
-FileName=main.tex
+FileName=main.toc
 FoldedLines=
-IsMainFile=yes
+IsMainFile=no
 Opened=no
 ScrollPos.X=0
 ScrollPos.Y=0
@@ -437,7 +437,7 @@ Page=0
 Zoom=9
 
 [Project\DVI\1]
-Page=28
+Page=4
 Zoom=9
 
 [Project\DVI\2]
@@ -476,7 +476,7 @@ Zoom=9
 FileName=1
 FirstPage=0
 Magnifier=5
-Page=29
+Page=19
 PaperHeight=297
 PaperWidth=210
 Zoom=6

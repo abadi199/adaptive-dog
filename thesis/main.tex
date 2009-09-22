@@ -3,7 +3,7 @@
 %% a technical report, a draft copy, or a regular thesis.  You may need to
 %% re-specify the pagestyle after you \include  cover.tex.  For more
 %% information, see the first few lines of mitthesis.sty. 
-\documentstyle[12pt,vi,graphicx,pst-func, pstricks,subfigure, float]{modmitthesis}
+\documentstyle[12pt,graphicx,pst-func, pstricks,subfigure, float,url]{modmitthesis}
 
 %%\documentclass[12pt,vi]{mitthesis}
 \pagestyle{plain}
@@ -17,9 +17,10 @@
 %\ifx\files\all \typeout{Including all files.} \else \typeout{Including only \files.} \includeonly{\files} \fi
 \begin{document}
 
+\pagestyle{plain}
+
 \include{cover}
 
-\pagestyle{plain}
 
 \tableofcontents 
 %\newpage

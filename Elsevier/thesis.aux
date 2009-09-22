@@ -19,9 +19,10 @@
 \citation{sousa03}
 \citation{canny86}
 \citation{marr-hildreth80}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Line Drawing}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Line Drawing}{3}}
 \citation{gooch04}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Difference of Gaussian (DoG)}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Difference of Gaussian (DoG)}{4}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Sample of gaussian filter}}{5}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Input image}}}{5}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Gaussian with $\sigma = 1.0$}}}{5}}
@@ -37,9 +38,9 @@
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Rock and Boat}}}{7}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Baboon}}}{7}}
 \newlabel{fig:DoG}{{3}{7}}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Flow-based Difference of Gaussian}{7}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Edge Tangent Flow}{7}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Flow-based DoG}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Flow-based Difference of Gaussian}{7}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Edge Tangent Flow}{7}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Flow-based DoG}{9}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Flow-based DoG Kernel}}{9}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {FDoG Kernel}}}{9}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Gaussian components for DoG}}}{9}}
@@ -53,22 +54,25 @@
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {DoG}}}{11}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(c)}{\ignorespaces {FDoG}}}{11}}
 \newlabel{fig:FDoG}{{5}{11}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Hybrid}{11}}
 \citation{belongie98}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Weakness of FDoG}}{12}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Input Image}}}{12}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {DoG}}}{12}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(c)}{\ignorespaces {FDoG}}}{12}}
 \newlabel{fig:FDoGWeakness}{{6}{12}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Combining FDoG with DoG}{12}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Image Segmentation}{13}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Combining FDoG with DoG}{12}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Adaptive-DoG Technique}{13}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Image Segmentation}{13}}
 \newlabel{fig:Polarity_input}{{7(a)}{14}}
 \newlabel{sub@fig:Polarity_input}{{(a)}{14}}
 \newlabel{fig:Polarity_sample1}{{7(b)}{14}}
 \newlabel{sub@fig:Polarity_sample1}{{(b)}{14}}
 \@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Image Segmentation}}{14}}
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Input image}}}{14}}
-\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Polarity-based image segment; white indicates isotropic area, black indicates anisotropic area, and gray indicates area with low gradient magnitude}}}{14}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Adaptive-DoG}{14}}
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Polarity-based image segment; white indicates isotropic area (label 0), black indicates anisotropic area (label 1), and gray indicates area with low gradient magnitude (label 1)}}}{14}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Adaptive-DoG}{14}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Results}{15}}
 \newlabel{fig:Adaptive_input}{{8(a)}{15}}
 \newlabel{sub@fig:Adaptive_input}{{(a)}{15}}
 \newlabel{fig:Adaptive_sample}{{8(b)}{15}}
@@ -103,27 +107,28 @@
 \@writefile{lof}{\contentsline {subfigure}{\numberline{(f)}{\ignorespaces {Canny's Edge Detection}}}{19}}
 \newlabel{fig:Compare4}{{12}{19}}
 \bibdata{main}
-\bibcite{belongie98}{{1}{}{{}}{{}}}
-\bibcite{canny86}{{2}{}{{}}{{}}}
-\bibcite{decarlo03}{{3}{}{{}}{{}}}
-\bibcite{deussen00}{{4}{}{{}}{{}}}
-\bibcite{gooch04}{{5}{}{{}}{{}}}
-\bibcite{hays04}{{6}{}{{}}{{}}}
-\bibcite{hertzmann98}{{7}{}{{}}{{}}}
-\bibcite{kang07}{{8}{}{{}}{{}}}
-\bibcite{litwinowicz97}{{9}{}{{}}{{}}}
-\bibcite{marr-hildreth80}{{10}{}{{}}{{}}}
-\bibcite{emily08}{{11}{}{{}}{{}}}
-\bibcite{salisbury94}{{12}{}{{}}{{}}}
-\bibcite{schumann96}{{13}{}{{}}{{}}}
-\bibcite{secord02}{{14}{}{{}}{{}}}
-\bibcite{sousa03}{{15}{}{{}}{{}}}
-\bibcite{strothotte94}{{16}{}{{}}{{}}}
-\bibcite{strothotte02}{{17}{}{{}}{{}}}
-\bibcite{winkenbach94}{{18}{}{{}}{{}}}
-\bibstyle{plain}
+\bibcite{belongie98}{{1}{1998}{{Belongie et~al.}}{{Belongie, Carson, Greenspan, and Malik}}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{20}}
+\bibcite{canny86}{{2}{1986}{{Canny}}{{}}}
+\bibcite{decarlo03}{{3}{2003}{{DeCarlo et~al.}}{{DeCarlo, Finkelstein, Rusinkiewicz, and Santella}}}
+\bibcite{deussen00}{{4}{2000}{{Deussen et~al.}}{{Deussen, Hiller, Overveld, and Strothotte}}}
+\bibcite{gooch04}{{5}{2004}{{Gooch et~al.}}{{Gooch, Reinhard, and Gooch}}}
+\bibcite{hays04}{{6}{2004}{{Hays and Essa}}{{}}}
+\bibcite{hertzmann98}{{7}{1998}{{Hertzmann}}{{}}}
+\bibcite{kang07}{{8}{2007}{{Kang et~al.}}{{Kang, Lee, and Chui}}}
+\bibcite{litwinowicz97}{{9}{1997}{{Litwinowicz}}{{}}}
+\bibcite{marr-hildreth80}{{10}{1980}{{Marr and Hildreth}}{{}}}
+\bibcite{emily08}{{11}{2008}{{Metrics and for Creative Technologies Graphics~Lab}}{{}}}
+\bibcite{salisbury94}{{12}{1994}{{Salisbury et~al.}}{{Salisbury, Anderson, Barzel, and Salesin}}}
+\bibcite{schumann96}{{13}{1996}{{Schumann et~al.}}{{Schumann, Strothotte, Laser, and Raab}}}
+\bibcite{secord02}{{14}{2002}{{Secord}}{{}}}
+\bibcite{sousa03}{{15}{2003}{{Sousa and Prusinkiewicz}}{{}}}
+\bibcite{strothotte94}{{16}{1994}{{Strothotte et~al.}}{{Strothotte, Preim, Raab, Schumann, and Forsey}}}
+\bibcite{strothotte02}{{17}{2002}{{Strothotte and Schlechtweg}}{{}}}
+\bibcite{winkenbach94}{{18}{1994}{{Winkenbach and Salesin}}{{}}}
+\bibstyle{plainnat}
 \@setckpt{thesis}{
-\setcounter{page}{23}
+\setcounter{page}{24}
 \setcounter{equation}{16}
 \setcounter{enumi}{0}
 \setcounter{enumii}{0}
@@ -132,7 +137,7 @@
 \setcounter{footnote}{0}
 \setcounter{mpfootnote}{0}
 \setcounter{part}{0}
-\setcounter{section}{7}
+\setcounter{section}{6}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}

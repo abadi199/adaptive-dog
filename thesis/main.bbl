@@ -31,7 +31,8 @@ Bruce Gooch, Erik Reinhard, and Amy Gooch.
 \bibitem{hays04}
 James Hays and Irfan Essa.
 \newblock Image and video based painterly animation.
-\newblock pages 113--120, 2004.
+\newblock {\em NPAR '04: Proceedings of the 3rd international symposium on
+  Non-photorealistic animation and rendering}, pages 113--120, 2004.
 
 \bibitem{hertzmann98}
 Aaron Hertzmann.
@@ -49,7 +50,8 @@ Henry Kang, Seungyong Lee, and Charles~K. Chui.
 \bibitem{litwinowicz97}
 Peter Litwinowicz.
 \newblock Processing images and video for an impressionist effect.
-\newblock pages 407--414, 1997.
+\newblock {\em SIGGRAPH '97: Proceedings of the 24th annual conference on
+  Computer graphics and interactive techniques}, pages 407--414, 1997.
 
 \bibitem{marr-hildreth80}
 D.~Marr and E.~Hildreth.
@@ -60,22 +62,25 @@ D.~Marr and E.~Hildreth.
 \bibitem{emily08}
 Image Metrics and USC~Institute for Creative Technologies Graphics~Lab.
 \newblock High resolution face scanning for "digital emily".
-\newblock \url{http://http://gl.ict.usc.edu/Research/DigitalEmily/}, 2008.
+\newblock \url{http://gl.ict.usc.edu/Research/DigitalEmily/}, 2008.
 
 \bibitem{salisbury94}
 Michael~P. Salisbury, Sean~E. Anderson, Ronen Barzel, and David~H. Salesin.
 \newblock Interactive pen-and-ink illustration.
-\newblock pages 101--108, 1994.
+\newblock {\em SIGGRAPH '94: Proceedings of the 21st annual conference on
+  Computer graphics and interactive techniques}, pages 101--108, 1994.
 
 \bibitem{schumann96}
 Jutta Schumann, Thomas Strothotte, Stefan Laser, and Andreas Raab.
 \newblock Assessing the effect of non-photorealistic rendered images in cad.
-\newblock pages 35--41, 1996.
+\newblock {\em CHI '96: Proceedings of the SIGCHI conference on Human factors
+  in computing systems}, pages 35--41, 1996.
 
 \bibitem{secord02}
 Adrian Secord.
 \newblock Weighted voronoi stippling.
-\newblock pages 37--43, 2002.
+\newblock {\em NPAR '02: Proceedings of the 2nd international symposium on
+  Non-photorealistic animation and rendering}, pages 37--43, 2002.
 
 \bibitem{sousa03}
 Mario~Costa Sousa and Przemyslaw Prusinkiewicz.
@@ -85,7 +90,7 @@ Mario~Costa Sousa and Przemyslaw Prusinkiewicz.
 \bibitem{strothotte94}
 T.~Strothotte, B.~Preim, A.~Raab, J.~Schumann, and D.~R. Forsey.
 \newblock How to render frames and influence people.
-\newblock 13(3):455--466, 1994.
+\newblock {\em Computer Graphics Forum}, 13(3):455--466, 1994.
 \newblock Special issue on Eurographics~'94.
 
 \bibitem{strothotte02}
@@ -97,6 +102,7 @@ Thomas Strothotte and Stefan Schlechtweg.
 \bibitem{winkenbach94}
 Georges Winkenbach and David~H. Salesin.
 \newblock Computer-generated pen-and-ink illustration.
-\newblock pages 91--100, 1994.
+\newblock {\em SIGGRAPH '94: Proceedings of the 21st annual conference on
+  Computer graphics and interactive techniques}, pages 91--100, 1994.
 
 \end{thebibliography}
